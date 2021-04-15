@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <cstdio>
 
+#include "console.hpp"
 #include "font.hpp"
 #include "frame_buffer_config.hpp"
 #include "graphics.hpp"
@@ -35,9 +36,12 @@ extern "C" void KernelMain(const FrameBufferConfig &frame_buffer_config) {
     }
   }
 
+  Console console(*pixel_writer, {0, 0, 0}, {255, 255, 255});
   char buf[128];
-  sprintf(buf, "1 + 2 = %d", 1 + 2);
-  WriteString(*pixel_writer, 0, 82, buf, {0, 0, 0});
+  for (int i = 0; i < 30; ++i) {
+    sprintf(buf, "line %d\n", i);
+    console.PutString(buf);
+  }
 
   while (1) {
     __asm__("hlt");
