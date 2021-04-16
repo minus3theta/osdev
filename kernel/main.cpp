@@ -3,9 +3,11 @@
 #include <cstdio>
 
 #include "console.hpp"
+#include "error.hpp"
 #include "font.hpp"
 #include "frame_buffer_config.hpp"
 #include "graphics.hpp"
+#include "logger.hpp"
 #include "pci.hpp"
 
 // void *operator new(std::size_t size, void *buf) { return buf; }
@@ -113,6 +115,29 @@ extern "C" void KernelMain(const FrameBufferConfig &frame_buffer_config) {
     printk("%d.%d.%d: vend %04x, class %08x, head %02x\n", dev.bus, dev.device,
            dev.function, vendor_id, class_code, dev.header_type);
   }
+
+  pci::Device *xhc_dev = nullptr;
+  for (int i = 0; i < pci::num_device; ++i) {
+    if (pci::devices[i].class_code.Match(0x0cu, 0x03u, 0x30u)) {
+      xhc_dev = &pci::devices[i];
+
+      if (pci::ReadVendorId(*xhc_dev) == 0x8086) {
+        break;
+      }
+    }
+  }
+
+  setLogLevel(kDebug);
+
+  if (xhc_dev) {
+    Log(kInfo, "xHC has been found: %d.%d.%d\n", xhc_dev->bus, xhc_dev->device,
+        xhc_dev->function);
+  }
+
+  const WithError<uint64_t> xhc_bar = pci::ReadBar(*xhc_dev, 0);
+  Log(kDebug, "ReadBar: %s\n", xhc_bar.error.Name());
+  const uint64_t xhc_mmio_base = xhc_bar.value & ~0xflu;
+  Log(kDebug, "xHC mmio_base = %08lx\n", xhc_mmio_base);
 
   while (1) {
     __asm__("hlt");
