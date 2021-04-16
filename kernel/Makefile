@@ -1,8 +1,14 @@
 TARGET = kernel.elf
-OBJS = main.o graphics.o font.o hankaku.o newlib_support.o console.o pci.o asmfunc.o logger.o
+OBJS = main.o graphics.o font.o hankaku.o newlib_support.o console.o pci.o asmfunc.o \
+	logger.o libcxx_support.o \
+	usb/memory.o usb/device.o usb/xhci/ring.o usb/xhci/trb.o usb/xhci/xhci.o \
+	usb/xhci/port.o usb/xhci/device.o usb/xhci/devmgr.o usb/xhci/registers.o \
+	usb/classdriver/base.o usb/classdriver/hid.o usb/classdriver/keyboard.o \
+	usb/classdriver/mouse.o
 DEPENDS = $(join $(dir $(OBJS)),$(addprefix .,$(notdir $(OBJS:.o=.d))))
 
 CC = clang
+CPPFLAGS += -I.
 CFLAGS += -O2 -Wall -g --target=x86_64-elf -ffreestanding -mno-red-zone
 CXX = clang++
 CXXFLAGS += -O2 -Wall -g --target=x86_64-elf -ffreestanding -mno-red-zone \
@@ -19,10 +25,10 @@ clean:
 	$(RM) *.o
 
 kernel.elf: $(OBJS)
-	$(LD) $(LDFLAGS) -o kernel.elf $^ -lc
+	$(LD) $(LDFLAGS) -o kernel.elf $^ -lc -lc++
 
 %.o: %.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $<
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 .%.d: %.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MM $< > $@
@@ -30,7 +36,7 @@ kernel.elf: $(OBJS)
 	sed --in-place 's|$(notdir $(OBJ))|$(OBJ)|' $@
 
 %.o: %.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 .%.d: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -MM $< > $@
