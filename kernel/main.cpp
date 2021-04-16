@@ -6,8 +6,9 @@
 #include "font.hpp"
 #include "frame_buffer_config.hpp"
 #include "graphics.hpp"
+#include "pci.hpp"
 
-void *operator new(std::size_t size, void *buf) { return buf; }
+// void *operator new(std::size_t size, void *buf) { return buf; }
 void operator delete(void *) noexcept {}
 
 const PixelColor kDesktopBGColor{45, 118, 237};
@@ -99,6 +100,18 @@ extern "C" void KernelMain(const FrameBufferConfig &frame_buffer_config) {
         pixel_writer->Write(200 + dx, 100 + dy, {255, 255, 255});
       }
     }
+  }
+
+  auto err = pci::ScanAllBus();
+  printk("ScanAllBus: %s\n", err.Name());
+  printk("num_device: %d\n", pci::num_device);
+
+  for (int i = 0; i < pci::num_device; ++i) {
+    const auto &dev = pci::devices[i];
+    auto vendor_id = pci::ReadVendorId(dev.bus, dev.device, dev.function);
+    auto class_code = pci::ReadClassCode(dev.bus, dev.device, dev.function);
+    printk("%d.%d.%d: vend %04x, class %08x, head %02x\n", dev.bus, dev.device,
+           dev.function, vendor_id, class_code, dev.header_type);
   }
 
   while (1) {
