@@ -25,6 +25,7 @@ public:
     kInvalidPhase,
     kUnknownXHCISpeedID,
     kNoWaiter,
+    kNoPCIMSI,
     kLastOfCode,
   };
 
@@ -50,6 +51,7 @@ private:
       "kInvalidPhase",
       "kUnknownXHCISpeedID",
       "kNoWaiter",
+      "kNoPCIMSI",
   };
   static_assert(Error::Code::kLastOfCode == code_names.size());
 
@@ -75,8 +77,7 @@ private:
 
 #define MAKE_ERROR(code) Error((code), __FILE__, __LINE__)
 
-template <class T>
-struct WithError {
+template <class T> struct WithError {
   T value;
   Error error;
 };
