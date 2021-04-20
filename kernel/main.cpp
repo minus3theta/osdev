@@ -160,7 +160,6 @@ extern "C" void KernelMain(const FrameBufferConfig &frame_buffer_config) {
   usb::xhci::Controller xhc(xhc_mmio_base);
 
   if (pci::ReadVendorId(*xhc_dev) == 0x8086) {
-    Log(kDebug, "hoge\n");
     SwitchEhci2Xhci(*xhc_dev);
   }
   {
