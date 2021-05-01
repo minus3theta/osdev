@@ -9,6 +9,7 @@
 #include "console.hpp"
 #include "error.hpp"
 #include "font.hpp"
+#include "frame_buffer.hpp"
 #include "frame_buffer_config.hpp"
 #include "graphics.hpp"
 #include "interrupt.hpp"
@@ -21,6 +22,7 @@
 #include "pci.hpp"
 #include "queue.hpp"
 #include "segment.hpp"
+#include "timer.hpp"
 #include "usb/classdriver/mouse.hpp"
 #include "usb/device.hpp"
 #include "usb/memory.hpp"
@@ -53,7 +55,11 @@ unsigned int mouse_layer_id;
 
 void MouseObserver(int8_t displacement_x, int8_t displacement_y) {
   layer_manager->MoveRelative(mouse_layer_id, {displacement_x, displacement_y});
+  StartLAPICTimer();
   layer_manager->Draw();
+  auto elapsed = LAPICTimerElapsed();
+  StopLAPICTimer();
+  printk("MouseObserver: elapsed = %u\n", elapsed);
 }
 
 void SwitchEhci2Xhci(const pci::Device &xhc_dev) {
@@ -116,6 +122,8 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
   printk("Welcome to MikanOS!\n");
   setLogLevel(kWarn);
 
+  InitializeAPICTimer();
+
   SetupSegments();
 
   const uint16_t kernel_cs = 1 << 3;
@@ -158,27 +166,28 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
     exit(1);
   }
 
-  const std::array available_memory_types{
-      MemoryType::kEfiBootServicesCode,
-      MemoryType::kEfiBootServicesData,
-      MemoryType::kEfiConventionalMemory,
-  };
+  // const std::array available_memory_types{
+  //     MemoryType::kEfiBootServicesCode,
+  //     MemoryType::kEfiBootServicesData,
+  //     MemoryType::kEfiConventionalMemory,
+  // };
 
-  printk("memory_map: %p\n", &memory_map);
-  for (uintptr_t iter = reinterpret_cast<uintptr_t>(memory_map.buffer);
-       iter <
-       reinterpret_cast<uintptr_t>(memory_map.buffer) + memory_map.map_size;
-       iter += memory_map.descriptor_size) {
-    auto desc = reinterpret_cast<MemoryDescriptor *>(iter);
-    for (const auto &amt : available_memory_types) {
-      if (desc->type == amt) {
-        printk("type = %u, phys = %08lx - %08lx, pages = %lu, attr = %08lx\n",
-               desc->type, desc->physical_start,
-               desc->physical_start + desc->number_of_pages * 4096 - 1,
-               desc->number_of_pages, desc->attribute);
-      }
-    }
-  }
+  // printk("memory_map: %p\n", &memory_map);
+  // for (uintptr_t iter = reinterpret_cast<uintptr_t>(memory_map.buffer);
+  //      iter <
+  //      reinterpret_cast<uintptr_t>(memory_map.buffer) + memory_map.map_size;
+  //      iter += memory_map.descriptor_size) {
+  //   auto desc = reinterpret_cast<MemoryDescriptor *>(iter);
+  //   for (const auto &amt : available_memory_types) {
+  //     if (desc->type == amt) {
+  //       printk("type = %u, phys = %08lx - %08lx, pages = %lu, attr =
+  //       %08lx\n",
+  //              desc->type, desc->physical_start,
+  //              desc->physical_start + desc->number_of_pages * 4096 - 1,
+  //              desc->number_of_pages, desc->attribute);
+  //     }
+  //   }
+  // }
 
   std::array<Message, 32> main_queue_data;
   ArrayQueue<Message> main_queue(main_queue_data);
@@ -262,18 +271,26 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
   const int kFrameWidth = frame_buffer_config.horizontal_resolution;
   const int kFrameHeight = frame_buffer_config.vertical_resolution;
 
-  auto bgwindow = std::make_shared<Window>(kFrameWidth, kFrameHeight);
+  auto bgwindow = std::make_shared<Window>(kFrameWidth, kFrameHeight,
+                                           frame_buffer_config.pixel_format);
   auto bgwriter = bgwindow->Writer();
 
   DrawDesktop(*bgwriter);
   console->SetWriter(bgwriter);
 
-  auto mouse_window = std::make_shared<Window>(kFrameWidth, kFrameHeight);
+  auto mouse_window = std::make_shared<Window>(
+      kMouseCursorWidth, kMouseCursorHeight, frame_buffer_config.pixel_format);
   mouse_window->SetTransparentColor(kMouseTransparentColor);
   DrawMouseCursor(mouse_window->Writer(), {0, 0});
 
+  FrameBuffer screen;
+  if (auto err = screen.Initialize(frame_buffer_config)) {
+    Log(kError, "failed to initialize frame buffer: %s at %s:%d\n", err.Name(),
+        err.File(), err.Line());
+  }
+
   layer_manager = new LayerManager;
-  layer_manager->SetWriter(pixel_writer);
+  layer_manager->SetWriter(&screen);
 
   auto bglayer_id =
       layer_manager->NewLayer().SetWindow(bgwindow).Move({0, 0}).ID();

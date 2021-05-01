@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 
+#include "frame_buffer.hpp"
 #include "graphics.hpp"
 #include "window.hpp"
 
@@ -17,7 +18,7 @@ public:
   Layer &Move(Vector2D<int> pos);
   Layer &MoveRelative(Vector2D<int> pos_diff);
 
-  void DrawTo(PixelWriter &writer) const;
+  void DrawTo(FrameBuffer &screen) const;
 
 private:
   unsigned int id;
@@ -27,7 +28,7 @@ private:
 
 class LayerManager {
 public:
-  void SetWriter(PixelWriter *writer);
+  void SetWriter(FrameBuffer *screen);
   Layer &NewLayer();
 
   void Draw() const;
@@ -38,7 +39,7 @@ public:
   void Hide(unsigned int id);
 
 private:
-  PixelWriter *writer{nullptr};
+  FrameBuffer *screen{nullptr};
   std::vector<std::unique_ptr<Layer>> layers;
   std::vector<Layer *> layer_stack;
   unsigned int latest_id{0};

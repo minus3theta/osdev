@@ -1,27 +1,39 @@
 #include "window.hpp"
 
+#include "error.hpp"
+#include "frame_buffer_config.hpp"
 #include "graphics.hpp"
+#include "logger.hpp"
 
-Window::Window(int width, int height)
+Window::Window(int width, int height, PixelFormat shadow_format)
     : width(width), height(height),
-      data(height, std::vector(width, PixelColor{})) {}
+      data(height, std::vector(width, PixelColor{})) {
+  FrameBufferConfig config;
+  config.frame_buffer = nullptr;
+  config.horizontal_resolution = width;
+  config.vertical_resolution = height;
+  config.pixel_format = shadow_format;
 
-void Window::DrawTo(PixelWriter &writer, Vector2D<int> position) {
+  if (auto err = shadow_buffer.Initialize(config)) {
+    Log(kError, "failed to initialize shadow buffer: %s at %s:%d\n", err.Name(),
+        err.File(), err.Line());
+  }
+}
+
+void Window::DrawTo(FrameBuffer &dst, Vector2D<int> position) {
   if (!transparent_color) {
-    for (int y = 0; y < Height(); ++y) {
-      for (int x = 0; x < Width(); ++x) {
-        writer.Write(position.x + x, position.y + y, At(x, y));
-      }
-    }
+    dst.Copy(position, shadow_buffer);
     return;
   }
 
   const auto tc = transparent_color.value();
+  auto &writer = dst.Writer();
   for (int y = 0; y < Height(); ++y) {
     for (int x = 0; x < Width(); ++x) {
-      const auto c = At(x, y);
+      const auto p = Vector2D<int>{x, y};
+      const auto c = At(p);
       if (c != tc) {
-        writer.Write(position.x + x, position.y + y, At(x, y));
+        writer.Write(position + p, c);
       }
     }
   }
@@ -33,9 +45,14 @@ void Window::SetTransparentColor(std::optional<PixelColor> c) {
 
 Window::WindowWriter *Window::Writer() { return &writer; }
 
-PixelColor &Window::At(int x, int y) { return data[y][x]; }
+const PixelColor &Window::At(Vector2D<int> pos) const {
+  return data[pos.y][pos.x];
+}
 
-const PixelColor &Window::At(int x, int y) const { return data[y][x]; }
+void Window::Write(Vector2D<int> pos, PixelColor c) {
+  data[pos.y][pos.x] = c;
+  shadow_buffer.Writer().Write(pos, c);
+}
 
 int Window::Width() const { return width; }
 
