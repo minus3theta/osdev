@@ -1,7 +1,4 @@
 #include "memory_manager.hpp"
-#include "error.hpp"
-
-#include <cstddef>
 
 BitmapMemoryManager::BitmapMemoryManager()
     : alloc_map(), range_begin(FrameID{0}), range_end(FrameID{kFrameCount}) {}
@@ -62,5 +59,20 @@ Error BitmapMemoryManager::Free(FrameID start_frame, size_t num_frames) {
   for (size_t i = 0; i < num_frames; ++i) {
     SetBit(FrameID{start_frame.ID() + i}, false);
   }
+  return MAKE_ERROR(Error::kSuccess);
+}
+
+extern "C" caddr_t program_break, program_break_end;
+
+Error InitializeHeap(BitmapMemoryManager &memory_manager) {
+  const int kHeapFrames = 64 * 512;
+  const auto heap_start = memory_manager.Allocate(kHeapFrames);
+  if (heap_start.error) {
+    return heap_start.error;
+  }
+
+  program_break =
+      reinterpret_cast<caddr_t>(heap_start.value.ID() * kBytesPerFrame);
+  program_break_end = program_break + kHeapFrames * kBytesPerFrame;
   return MAKE_ERROR(Error::kSuccess);
 }
