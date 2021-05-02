@@ -4,6 +4,7 @@
 #include "frame_buffer_config.hpp"
 #include "graphics.hpp"
 #include "logger.hpp"
+#include <algorithm>
 
 Window::Window(int width, int height, PixelFormat shadow_format)
     : width(width), height(height),
@@ -28,8 +29,10 @@ void Window::DrawTo(FrameBuffer &dst, Vector2D<int> position) {
 
   const auto tc = transparent_color.value();
   auto &writer = dst.Writer();
-  for (int y = 0; y < Height(); ++y) {
-    for (int x = 0; x < Width(); ++x) {
+  for (int y = std::max(0, 0 - position.y);
+       y < std::min(Height(), writer.Height() - position.y); ++y) {
+    for (int x = std::max(0, 0 - position.x);
+         x < std::min(Width(), writer.Width() - position.x); ++x) {
       const auto p = Vector2D<int>{x, y};
       const auto c = At(p);
       if (c != tc) {
