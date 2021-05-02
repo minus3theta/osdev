@@ -14,7 +14,7 @@ public:
   Window(const Window &rhs) = delete;
   Window &operator=(const Window &rhs) = delete;
 
-  void DrawTo(FrameBuffer &dst, Vector2D<int> position);
+  void DrawTo(FrameBuffer &dst, Vector2D<int> pos, const Rectangle<int> &area);
   void SetTransparentColor(std::optional<PixelColor> c);
 
   const PixelColor &At(Vector2D<int> pos) const;
@@ -22,6 +22,7 @@ public:
 
   virtual int Width() const override;
   virtual int Height() const override;
+  Vector2D<int> Size() const;
 
   void Move(Vector2D<int> dst_pos, const Rectangle<int> &src);
 

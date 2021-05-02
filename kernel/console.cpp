@@ -22,7 +22,7 @@ void Console::PutString(const char *s) {
     ++s;
   }
   if (layer_manager) {
-    layer_manager->Draw();
+    layer_manager->Draw(layer_id);
   }
 }
 
@@ -65,7 +65,12 @@ void Console::SetWindow(const std::shared_ptr<Window> &window) {
   Refresh();
 }
 
+void Console::SetLayerID(unsigned int layer_id) { this->layer_id = layer_id; }
+
+unsigned int Console::LayerID() const { return layer_id; }
+
 void Console::Refresh() {
+  FillRectangle(*writer, {0, 0}, {8 * kColumns, 16 * kRows}, bg_color);
   for (int row = 0; row < kRows; ++row) {
     WriteString(*writer, Vector2D<int>{0, 16 * row}, buffer[row], fg_color);
   }
