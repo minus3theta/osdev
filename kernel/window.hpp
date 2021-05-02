@@ -23,6 +23,8 @@ public:
   virtual int Width() const override;
   virtual int Height() const override;
 
+  void Move(Vector2D<int> dst_pos, const Rectangle<int> &src);
+
 private:
   int width, height;
   std::vector<std::vector<PixelColor>> data;

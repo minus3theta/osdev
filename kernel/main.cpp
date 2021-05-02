@@ -258,7 +258,7 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
                                            frame_buffer_config.pixel_format);
 
   DrawDesktop(*bgwindow);
-  console->SetWriter(bgwindow.get());
+  console->SetWindow(bgwindow);
 
   auto mouse_window = std::make_shared<Window>(
       kMouseCursorWidth, kMouseCursorHeight, frame_buffer_config.pixel_format);

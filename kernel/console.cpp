@@ -2,6 +2,7 @@
 
 #include "console.hpp"
 #include "font.hpp"
+#include "graphics.hpp"
 #include "layer.hpp"
 
 Console::Console(const PixelColor &fg_color, const PixelColor &bg_color)
@@ -29,12 +30,15 @@ void Console::Newline() {
   cursor_column = 0;
   if (cursor_row < kRows - 1) {
     ++cursor_row;
+    return;
+  }
+
+  if (window) {
+    Rectangle<int> move_src{{0, 16}, {8 * kColumns, 16 * (kRows - 1)}};
+    window->Move({0, 0}, move_src);
+    FillRectangle(*writer, {0, 16 * (kRows - 1)}, {8 * kColumns, 16}, bg_color);
   } else {
-    for (int y = 0; y < 16 * kRows; ++y) {
-      for (int x = 0; x < 8 * kColumns; ++x) {
-        writer->Write(Vector2D<int>{x, y}, bg_color);
-      }
-    }
+    FillRectangle(*writer, {0, 0}, {8 * kColumns, 16 * kRows}, bg_color);
     for (int row = 0; row < kRows - 1; ++row) {
       memcpy(buffer[row], buffer[row + 1], kColumns + 1);
       WriteString(*writer, Vector2D<int>{0, 16 * row}, buffer[row], fg_color);
@@ -48,6 +52,16 @@ void Console::SetWriter(PixelWriter *writer) {
     return;
   }
   this->writer = writer;
+  window.reset();
+  Refresh();
+}
+
+void Console::SetWindow(const std::shared_ptr<Window> &window) {
+  if (this->window == window) {
+    return;
+  }
+  this->window = window;
+  writer = window.get();
   Refresh();
 }
 
