@@ -44,6 +44,12 @@ int printk(const char *format, ...) {
   result = vsprintf(s, format, ap);
   va_end(ap);
 
+  StartLAPICTimer();
+  console->PutString(s);
+  auto elapsed = LAPICTimerElapsed();
+  StopLAPICTimer();
+
+  sprintf(s, "[%9d]", elapsed);
   console->PutString(s);
   return result;
 }
@@ -166,29 +172,6 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
     exit(1);
   }
 
-  // const std::array available_memory_types{
-  //     MemoryType::kEfiBootServicesCode,
-  //     MemoryType::kEfiBootServicesData,
-  //     MemoryType::kEfiConventionalMemory,
-  // };
-
-  // printk("memory_map: %p\n", &memory_map);
-  // for (uintptr_t iter = reinterpret_cast<uintptr_t>(memory_map.buffer);
-  //      iter <
-  //      reinterpret_cast<uintptr_t>(memory_map.buffer) + memory_map.map_size;
-  //      iter += memory_map.descriptor_size) {
-  //   auto desc = reinterpret_cast<MemoryDescriptor *>(iter);
-  //   for (const auto &amt : available_memory_types) {
-  //     if (desc->type == amt) {
-  //       printk("type = %u, phys = %08lx - %08lx, pages = %lu, attr =
-  //       %08lx\n",
-  //              desc->type, desc->physical_start,
-  //              desc->physical_start + desc->number_of_pages * 4096 - 1,
-  //              desc->number_of_pages, desc->attribute);
-  //     }
-  //   }
-  // }
-
   std::array<Message, 32> main_queue_data;
   ArrayQueue<Message> main_queue(main_queue_data);
   ::main_queue = &main_queue;
@@ -200,8 +183,8 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
     const auto &dev = pci::devices[i];
     auto vendor_id = pci::ReadVendorId(dev.bus, dev.device, dev.function);
     auto class_code = pci::ReadClassCode(dev.bus, dev.device, dev.function);
-    printk("%d.%d.%d: vend %04x, class %08x, head %02x\n", dev.bus, dev.device,
-           dev.function, vendor_id, class_code, dev.header_type);
+    Log(kDebug, "%d.%d.%d: vend %04x, class %08x, head %02x\n", dev.bus,
+        dev.device, dev.function, vendor_id, class_code, dev.header_type);
   }
 
   pci::Device *xhc_dev = nullptr;
