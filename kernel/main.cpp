@@ -28,6 +28,7 @@
 #include "usb/memory.hpp"
 #include "usb/xhci/trb.hpp"
 #include "usb/xhci/xhci.hpp"
+#include "window.hpp"
 
 char pixel_writer_buf[sizeof(RGBResv8BitPerColorPixelWriter)];
 PixelWriter *pixel_writer;
@@ -267,6 +268,12 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
   mouse_window->SetTransparentColor(kMouseTransparentColor);
   DrawMouseCursor(mouse_window.get(), {0, 0});
 
+  auto main_window =
+      std::make_shared<Window>(160, 68, frame_buffer_config.pixel_format);
+  DrawWindow(*main_window, "Hello Window");
+  WriteString(*main_window, {24, 28}, "Welcome to", {0, 0, 0});
+  WriteString(*main_window, {24, 44}, "MikanOS world!", {0, 0, 0});
+
   FrameBuffer screen;
   if (auto err = screen.Initialize(frame_buffer_config)) {
     Log(kError, "failed to initialize frame buffer: %s at %s:%d\n", err.Name(),
@@ -280,9 +287,12 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
       layer_manager->NewLayer().SetWindow(bgwindow).Move({0, 0}).ID();
   mouse_layer_id =
       layer_manager->NewLayer().SetWindow(mouse_window).Move({200, 200}).ID();
+  auto main_window_layer_id =
+      layer_manager->NewLayer().SetWindow(main_window).Move({300, 100}).ID();
 
   layer_manager->UpDown(bglayer_id, 0);
   layer_manager->UpDown(mouse_layer_id, 1);
+  layer_manager->UpDown(main_window_layer_id, 1);
   layer_manager->Draw();
 
   while (true) {

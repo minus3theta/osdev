@@ -32,3 +32,5 @@ private:
 
   FrameBuffer shadow_buffer;
 };
+
+void DrawWindow(PixelWriter &writer, const char *title);
