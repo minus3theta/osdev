@@ -295,10 +295,19 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
   layer_manager->UpDown(main_window_layer_id, 1);
   layer_manager->Draw();
 
+  char str[128];
+  unsigned int count = 0;
+
   while (true) {
+    ++count;
+    sprintf(str, "%010u", count);
+    FillRectangle(*main_window, {24, 28}, {8 * 10, 16}, {0xc6, 0xc6, 0xc6});
+    WriteString(*main_window, {24, 28}, str, {0, 0, 0});
+    layer_manager->Draw();
+
     __asm__("cli");
     if (main_queue.Count() == 0) {
-      __asm__("sti\n\thlt");
+      __asm__("sti");
       continue;
     }
 
