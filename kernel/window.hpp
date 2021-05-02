@@ -7,21 +7,8 @@
 #include "frame_buffer_config.hpp"
 #include "graphics.hpp"
 
-class Window {
+class Window : public PixelWriter {
 public:
-  class WindowWriter : public PixelWriter {
-  public:
-    WindowWriter(Window &window) : window{window} {}
-    virtual void Write(Vector2D<int> pos, const PixelColor &c) override {
-      window.Write(pos, c);
-    }
-    virtual int Width() const override { return window.Width(); }
-    virtual int Height() const override { return window.Height(); }
-
-  private:
-    Window &window;
-  };
-
   Window(int width, int height, PixelFormat shadow_format);
   ~Window() = default;
   Window(const Window &rhs) = delete;
@@ -29,18 +16,16 @@ public:
 
   void DrawTo(FrameBuffer &dst, Vector2D<int> position);
   void SetTransparentColor(std::optional<PixelColor> c);
-  WindowWriter *Writer();
 
   const PixelColor &At(Vector2D<int> pos) const;
-  void Write(Vector2D<int> pos, PixelColor c);
+  virtual void Write(Vector2D<int> pos, const PixelColor &c) override;
 
-  int Width() const;
-  int Height() const;
+  virtual int Width() const override;
+  virtual int Height() const override;
 
 private:
   int width, height;
   std::vector<std::vector<PixelColor>> data;
-  WindowWriter writer{*this};
   std::optional<PixelColor> transparent_color{std::nullopt};
 
   FrameBuffer shadow_buffer;

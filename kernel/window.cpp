@@ -43,13 +43,11 @@ void Window::SetTransparentColor(std::optional<PixelColor> c) {
   transparent_color = c;
 }
 
-Window::WindowWriter *Window::Writer() { return &writer; }
-
 const PixelColor &Window::At(Vector2D<int> pos) const {
   return data[pos.y][pos.x];
 }
 
-void Window::Write(Vector2D<int> pos, PixelColor c) {
+void Window::Write(Vector2D<int> pos, const PixelColor &c) {
   data[pos.y][pos.x] = c;
   shadow_buffer.Writer().Write(pos, c);
 }

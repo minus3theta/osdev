@@ -256,15 +256,14 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
 
   auto bgwindow = std::make_shared<Window>(kFrameWidth, kFrameHeight,
                                            frame_buffer_config.pixel_format);
-  auto bgwriter = bgwindow->Writer();
 
-  DrawDesktop(*bgwriter);
-  console->SetWriter(bgwriter);
+  DrawDesktop(*bgwindow);
+  console->SetWriter(bgwindow.get());
 
   auto mouse_window = std::make_shared<Window>(
       kMouseCursorWidth, kMouseCursorHeight, frame_buffer_config.pixel_format);
   mouse_window->SetTransparentColor(kMouseTransparentColor);
-  DrawMouseCursor(mouse_window->Writer(), {0, 0});
+  DrawMouseCursor(mouse_window.get(), {0, 0});
 
   FrameBuffer screen;
   if (auto err = screen.Initialize(frame_buffer_config)) {
