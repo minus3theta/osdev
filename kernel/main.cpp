@@ -23,7 +23,6 @@
 #include "mouse.hpp"
 #include "paging.hpp"
 #include "pci.hpp"
-#include "queue.hpp"
 #include "segment.hpp"
 #include "timer.hpp"
 #include "usb/device.hpp"
