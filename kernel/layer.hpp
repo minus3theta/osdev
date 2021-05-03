@@ -43,6 +43,8 @@ public:
 
 private:
   FrameBuffer *screen{nullptr};
+  mutable FrameBuffer back_buffer;
+
   std::vector<std::unique_ptr<Layer>> layers;
   std::vector<Layer *> layer_stack;
   unsigned int latest_id{0};

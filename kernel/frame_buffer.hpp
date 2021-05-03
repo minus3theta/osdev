@@ -15,6 +15,7 @@ public:
   void Move(Vector2D<int> dst_pos, const Rectangle<int> &src);
 
   FrameBufferWriter &Writer() { return *writer; }
+  const FrameBufferConfig &Config() const { return config; }
 
 private:
   FrameBufferConfig config;

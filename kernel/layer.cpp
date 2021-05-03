@@ -1,5 +1,6 @@
 #include "layer.hpp"
 #include "frame_buffer.hpp"
+#include "frame_buffer_config.hpp"
 #include "graphics.hpp"
 #include <algorithm>
 #include <memory>
@@ -33,7 +34,13 @@ void Layer::DrawTo(FrameBuffer &screen, const Rectangle<int> &area) const {
 
 Vector2D<int> Layer::GetPosition() const { return pos; }
 
-void LayerManager::SetWriter(FrameBuffer *screen) { this->screen = screen; }
+void LayerManager::SetWriter(FrameBuffer *screen) {
+  this->screen = screen;
+
+  FrameBufferConfig back_config = screen->Config();
+  back_config.frame_buffer = nullptr;
+  back_buffer.Initialize(back_config);
+}
 
 Layer &LayerManager::NewLayer() {
   ++latest_id;
@@ -66,8 +73,9 @@ void LayerManager::MoveRelative(unsigned int id, Vector2D<int> pos_diff) {
 
 void LayerManager::Draw(const Rectangle<int> &area) const {
   for (auto layer : layer_stack) {
-    layer->DrawTo(*screen, area);
+    layer->DrawTo(back_buffer, area);
   }
+  screen->Copy(area.pos, back_buffer, area);
 }
 
 void LayerManager::Draw(unsigned int id) const {
@@ -80,9 +88,10 @@ void LayerManager::Draw(unsigned int id) const {
       draw = true;
     }
     if (draw) {
-      layer->DrawTo(*screen, window_area);
+      layer->DrawTo(back_buffer, window_area);
     }
   }
+  screen->Copy(window_area.pos, back_buffer, window_area);
 }
 
 void LayerManager::Hide(unsigned int id) {
