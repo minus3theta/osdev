@@ -17,15 +17,18 @@ public:
 
   Layer &Move(Vector2D<int> pos);
   Layer &MoveRelative(Vector2D<int> pos_diff);
+  Layer &SetDraggable(bool draggable);
 
   void DrawTo(FrameBuffer &screen, const Rectangle<int> &area) const;
 
   Vector2D<int> GetPosition() const;
+  bool IsDraggable() const;
 
 private:
   unsigned int id;
   Vector2D<int> pos;
   std::shared_ptr<Window> window;
+  bool draggable{false};
 };
 
 class LayerManager {

@@ -26,6 +26,11 @@ Layer &Layer::MoveRelative(Vector2D<int> pos_diff) {
   return *this;
 }
 
+Layer &Layer::SetDraggable(bool draggable) {
+  this->draggable = draggable;
+  return *this;
+}
+
 void Layer::DrawTo(FrameBuffer &screen, const Rectangle<int> &area) const {
   if (window) {
     window->DrawTo(screen, pos, area);
@@ -33,6 +38,8 @@ void Layer::DrawTo(FrameBuffer &screen, const Rectangle<int> &area) const {
 }
 
 Vector2D<int> Layer::GetPosition() const { return pos; }
+
+bool Layer::IsDraggable() const { return draggable; }
 
 void LayerManager::SetWriter(FrameBuffer *screen) {
   this->screen = screen;
