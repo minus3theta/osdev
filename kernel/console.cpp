@@ -75,3 +75,12 @@ void Console::Refresh() {
     WriteString(*writer, Vector2D<int>{0, 16 * row}, buffer[row], fg_color);
   }
 }
+
+namespace {
+char console_buf[sizeof(Console)];
+}
+
+void InitializeConsole() {
+  console = new (console_buf) Console{kDesktopFGColor, kDesktopBGColor};
+  console->SetWriter(screen_writer);
+}

@@ -27,3 +27,7 @@ private:
   int cursor_row, cursor_column;
   unsigned int layer_id;
 };
+
+inline Console *console;
+
+void InitializeConsole();

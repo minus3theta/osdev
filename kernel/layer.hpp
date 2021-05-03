@@ -58,3 +58,5 @@ private:
 };
 
 inline LayerManager *layer_manager;
+
+void InitializeLayer();
