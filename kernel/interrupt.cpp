@@ -25,7 +25,7 @@ namespace {
 std::deque<Message> *msg_queue;
 
 __attribute__((interrupt)) void IntHandlerXHCI(InterruptFrame *frame) {
-  msg_queue->push_back(Message::kInterruptXHCI);
+  msg_queue->push_back(Message{Message::kInterruptXHCI});
   NotifyEndOfInterrupt();
 }
 
