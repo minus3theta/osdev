@@ -5,6 +5,7 @@
 #include "asmfunc.hpp"
 #include "message.hpp"
 #include "segment.hpp"
+#include "timer.hpp"
 
 void SetIDTEntry(InterruptDescriptor &desc, InterruptDescriptorAttribute attr,
                  uint64_t offset, uint16_t segment_selector) {
@@ -29,7 +30,7 @@ __attribute__((interrupt)) void IntHandlerXHCI(InterruptFrame *frame) {
 }
 
 __attribute__((interrupt)) void IntHandlerLAPICTimer(InterruptFrame *frame) {
-  msg_queue->push_back(Message::kInterruptLAPICTimer);
+  LAPICTimerOnInterrupt();
   NotifyEndOfInterrupt();
 }
 } // namespace
