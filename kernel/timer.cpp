@@ -10,7 +10,7 @@ volatile uint32_t &current_count = *reinterpret_cast<uint32_t *>(0xfee00390);
 volatile uint32_t &divide_config = *reinterpret_cast<uint32_t *>(0xfee003e0);
 } // namespace
 
-void InitializeAPICTimer() {
+void InitializeLAPICTimer() {
   divide_config = 0b1011;
   lvt_timer = (0b001 << 16) | 32;
 }
