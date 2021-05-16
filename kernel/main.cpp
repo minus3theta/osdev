@@ -88,6 +88,8 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
   InitializeMouse();
   layer_manager->Draw({{0, 0}, ScreenSize()});
 
+  InitializeLAPICTimer();
+
   char str[128];
   unsigned int count = 0;
 
@@ -111,6 +113,9 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
     switch (msg) {
     case Message::kInterruptXHCI:
       usb::xhci::ProcessEvents();
+      break;
+    case Message::kInterruptLAPICTimer:
+      printk("Timer interrupt\n");
       break;
     default:
       Log(kError, "Unknown message type: %d\n", static_cast<int>(msg));

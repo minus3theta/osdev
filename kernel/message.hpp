@@ -2,4 +2,5 @@
 
 enum class Message {
   kInterruptXHCI,
+  kInterruptLAPICTimer,
 };
