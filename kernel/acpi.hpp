@@ -50,6 +50,8 @@ struct FADT {
 } __attribute__((packed));
 
 inline const FADT *fadt;
+const int kPMTimerFreq = 3579545;
 
 void Initialize(const RSDP &rsdp);
+void WaitMilliseconds(unsigned long msec);
 } // namespace acpi
