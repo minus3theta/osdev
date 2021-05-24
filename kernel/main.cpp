@@ -16,6 +16,7 @@
 #include "frame_buffer_config.hpp"
 #include "graphics.hpp"
 #include "interrupt.hpp"
+#include "keyboard.hpp"
 #include "layer.hpp"
 #include "logger.hpp"
 #include "memory_manager.hpp"
@@ -93,6 +94,8 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
   acpi::Initialize(acpi_table);
   InitializeLAPICTimer(*main_queue);
 
+  InitializeKeyboard(*main_queue);
+
   char str[128];
 
   while (true) {
@@ -120,6 +123,11 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
       usb::xhci::ProcessEvents();
       break;
     case Message::kTimerTimeout:
+      break;
+    case Message::kKeyPush:
+      if (msg.arg.keyboard.ascii != 0) {
+        printk("%c", msg.arg.keyboard.ascii);
+      }
       break;
     default:
       Log(kError, "Unknown message type: %d\n", static_cast<int>(msg.type));
