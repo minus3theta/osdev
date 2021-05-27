@@ -7,6 +7,7 @@
 #include "acpi.hpp"
 #include "interrupt.hpp"
 #include "message.hpp"
+#include "task.hpp"
 
 namespace {
 const uint32_t kCountMax = 0xffffffffu;
@@ -50,12 +51,21 @@ TimerManager::TimerManager(std::deque<Message> &msg_queue)
 
 void TimerManager::AddTimer(const Timer &timer) { timers.push(timer); }
 
-void TimerManager::Tick() {
+bool TimerManager::Tick() {
   ++tick;
+
+  bool task_timer_timeout = false;
   while (true) {
     const auto &t = timers.top();
     if (t.Timeout() > tick) {
       break;
+    }
+
+    if (t.Value() == kTaskTimerValue) {
+      task_timer_timeout = true;
+      timers.pop();
+      timers.push(Timer{tick + kTaskTimerPeriod, kTaskTimerValue});
+      continue;
     }
 
     Message m{Message::kTimerTimeout};
@@ -65,6 +75,15 @@ void TimerManager::Tick() {
 
     timers.pop();
   }
+
+  return task_timer_timeout;
 }
 
-void LAPICTimerOnInterrupt() { timer_manager->Tick(); }
+void LAPICTimerOnInterrupt() {
+  const bool task_timer_timeout = timer_manager->Tick();
+  NotifyEndOfInterrupt();
+
+  if (task_timer_timeout) {
+    SwitchTask();
+  }
+}
