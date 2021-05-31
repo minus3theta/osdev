@@ -22,6 +22,12 @@ template <class T, class U> void Erase(T &c, const U &value) {
   auto it = std::remove(c.begin(), c.end(), value);
   c.erase(it, c.end());
 }
+
+void TaskIdle(uint64_t task_id, int64_t data) {
+  while (true) {
+    __asm__("hlt");
+  }
+}
 } // namespace
 
 Task::Task(uint64_t id) : id(id) {}
@@ -78,6 +84,9 @@ std::optional<Message> Task::ReceiveMessage() {
 TaskManager::TaskManager() {
   Task &task = NewTask().SetLevel(current_level).SetRunning(true);
   running[current_level].push_back(&task);
+
+  Task &idle = NewTask().InitContext(TaskIdle, 0).SetLevel(0).SetRunning(true);
+  running[0].push_back(&idle);
 }
 
 Task &TaskManager::NewTask() {
