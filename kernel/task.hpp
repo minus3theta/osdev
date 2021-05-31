@@ -4,9 +4,11 @@
 #include <cstdint>
 #include <deque>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "error.hpp"
+#include "message.hpp"
 
 struct TaskContext {
   uint64_t cr3, rip, rflags, reserved1;
@@ -33,10 +35,14 @@ public:
   Task &Sleep();
   Task &Wakeup();
 
+  void SendMessage(const Message &msg);
+  std::optional<Message> ReceiveMessage();
+
 private:
   uint64_t id;
   std::vector<uint64_t> stack;
   alignas(16) TaskContext context;
+  std::deque<Message> msgs;
 };
 
 class TaskManager {
@@ -49,6 +55,9 @@ public:
   Error Sleep(uint64_t id);
   void Wakeup(Task *task);
   Error Wakeup(uint64_t id);
+
+  Task &CurrentTask() const;
+  Error SendMessage(uint64_t id, const Message &msg);
 
 private:
   std::vector<std::unique_ptr<Task>> tasks;

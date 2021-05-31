@@ -53,6 +53,21 @@ Task &Task::Wakeup() {
   return *this;
 }
 
+void Task::SendMessage(const Message &msg) {
+  msgs.push_back(msg);
+  Wakeup();
+}
+
+std::optional<Message> Task::ReceiveMessage() {
+  if (msgs.empty()) {
+    return std::nullopt;
+  }
+
+  auto m = msgs.front();
+  msgs.pop_front();
+  return m;
+}
+
 TaskManager::TaskManager() { running.push_back(&NewTask()); }
 
 Task &TaskManager::NewTask() {
@@ -112,5 +127,18 @@ Error TaskManager::Wakeup(uint64_t id) {
   }
 
   Wakeup(it->get());
+  return MAKE_ERROR(Error::kSuccess);
+}
+
+Task &TaskManager::CurrentTask() const { return *running.front(); }
+
+Error TaskManager::SendMessage(uint64_t id, const Message &msg) {
+  auto it = std::find_if(tasks.begin(), tasks.end(),
+                         [id](const auto &t) { return t->ID() == id; });
+  if (it == tasks.end()) {
+    return MAKE_ERROR(Error::kNoSuchTask);
+  }
+
+  (*it)->SendMessage(msg);
   return MAKE_ERROR(Error::kSuccess);
 }
