@@ -175,6 +175,15 @@ Layer *LayerManager::FindLayerByPosition(Vector2D<int> pos,
   return *it;
 }
 
+int LayerManager::GetHeight(unsigned int id) {
+  for (int h = 0; h < layer_stack.size(); ++h) {
+    if (layer_stack[h]->ID() == id) {
+      return h;
+    }
+  }
+  return -1;
+}
+
 namespace {
 FrameBuffer *screen;
 }
@@ -207,6 +216,8 @@ void InitializeLayer() {
 
   layer_manager->UpDown(bglayer_id, 0);
   layer_manager->UpDown(console->LayerID(), 1);
+
+  active_layer = new ActiveLayer{*layer_manager};
 }
 
 void ProcessLayerMessage(const Message &msg) {
@@ -221,5 +232,31 @@ void ProcessLayerMessage(const Message &msg) {
   case LayerOperation::Draw:
     layer_manager->Draw(arg.layer_id);
     break;
+  }
+}
+
+ActiveLayer::ActiveLayer(LayerManager &manager) : manager{manager} {}
+
+void ActiveLayer::SetMouseLayer(unsigned int mouse_layer) {
+  this->mouse_layer = mouse_layer;
+}
+
+void ActiveLayer::Activate(unsigned int layer_id) {
+  if (active_layer == layer_id) {
+    return;
+  }
+
+  if (active_layer > 0) {
+    Layer *layer = manager.FindLayer(active_layer);
+    layer->GetWindow()->Deactivate();
+    manager.Draw(active_layer);
+  }
+
+  active_layer = layer_id;
+  if (active_layer > 0) {
+    Layer *layer = manager.FindLayer(active_layer);
+    layer->GetWindow()->Activate();
+    manager.UpDown(active_layer, manager.GetHeight(mouse_layer) - 1);
+    manager.Draw(active_layer);
   }
 }
