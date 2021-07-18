@@ -18,9 +18,13 @@ Layer &Layer::SetWindow(const std::shared_ptr<Window> &window) {
   return *this;
 }
 
-std::shared_ptr<Window> Layer::GetWindow() const { return window; }
+std::shared_ptr<Window> Layer::GetWindow() const {
+  return window;
+}
 
-unsigned int Layer::ID() const { return id; }
+unsigned int Layer::ID() const {
+  return id;
+}
 
 Layer &Layer::Move(Vector2D<int> pos) {
   this->pos = pos;
@@ -43,9 +47,13 @@ void Layer::DrawTo(FrameBuffer &screen, const Rectangle<int> &area) const {
   }
 }
 
-Vector2D<int> Layer::GetPosition() const { return pos; }
+Vector2D<int> Layer::GetPosition() const {
+  return pos;
+}
 
-bool Layer::IsDraggable() const { return draggable; }
+bool Layer::IsDraggable() const {
+  return draggable;
+}
 
 void LayerManager::SetWriter(FrameBuffer *screen) {
   this->screen = screen;
