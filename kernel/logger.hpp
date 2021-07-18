@@ -9,4 +9,4 @@ enum LogLevel {
 
 void setLogLevel(LogLevel level);
 
-int Log(LogLevel level, const char* format, ...);
+int Log(LogLevel level, const char *format, ...);

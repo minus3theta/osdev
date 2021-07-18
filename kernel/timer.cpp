@@ -35,11 +35,17 @@ void InitializeLAPICTimer() {
   initial_count = lapic_timer_freq / kTimerFreq;
 }
 
-void StartLAPICTimer() { initial_count = kCountMax; }
+void StartLAPICTimer() {
+  initial_count = kCountMax;
+}
 
-uint32_t LAPICTimerElapsed() { return kCountMax - current_count; }
+uint32_t LAPICTimerElapsed() {
+  return kCountMax - current_count;
+}
 
-void StopLAPICTimer() { initial_count = 0; }
+void StopLAPICTimer() {
+  initial_count = 0;
+}
 
 Timer::Timer(unsigned long timeout, int value)
     : timeout(timeout), value(value) {}
@@ -48,7 +54,9 @@ TimerManager::TimerManager() {
   timers.push(Timer{std::numeric_limits<unsigned long>::max(), -1});
 }
 
-void TimerManager::AddTimer(const Timer &timer) { timers.push(timer); }
+void TimerManager::AddTimer(const Timer &timer) {
+  timers.push(timer);
+}
 
 bool TimerManager::Tick() {
   ++tick;

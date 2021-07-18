@@ -65,9 +65,13 @@ void Console::SetWindow(const std::shared_ptr<Window> &window) {
   Refresh();
 }
 
-void Console::SetLayerID(unsigned int layer_id) { this->layer_id = layer_id; }
+void Console::SetLayerID(unsigned int layer_id) {
+  this->layer_id = layer_id;
+}
 
-unsigned int Console::LayerID() const { return layer_id; }
+unsigned int Console::LayerID() const {
+  return layer_id;
+}
 
 void Console::Refresh() {
   FillRectangle(*writer, {0, 0}, {8 * kColumns, 16 * kRows}, bg_color);

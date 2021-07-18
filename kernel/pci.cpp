@@ -146,11 +146,17 @@ Error ConfigureMSIXRegister(const Device &dev, uint8_t cap_addr,
 } // namespace
 
 namespace pci {
-void WriteAddress(uint32_t address) { IoOut32(kConfigAddress, address); }
+void WriteAddress(uint32_t address) {
+  IoOut32(kConfigAddress, address);
+}
 
-void WriteData(uint32_t value) { IoOut32(kConfigData, value); }
+void WriteData(uint32_t value) {
+  IoOut32(kConfigData, value);
+}
 
-uint32_t ReadData() { return IoIn32(kConfigData); }
+uint32_t ReadData() {
+  return IoIn32(kConfigData);
+}
 
 uint16_t ReadVendorId(uint8_t bus, uint8_t device, uint8_t function) {
   WriteAddress(MakeAddress(bus, device, function, 0x00));

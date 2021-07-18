@@ -99,10 +99,8 @@ void WaitMilliseconds(unsigned long msec) {
   }
 
   if (end < start) {
-    while (IoIn32(fadt->pm_tmr_blk) >= start) {
-    }
+    while (IoIn32(fadt->pm_tmr_blk) >= start) {}
   }
-  while (IoIn32(fadt->pm_tmr_blk) < end) {
-  }
+  while (IoIn32(fadt->pm_tmr_blk) < end) {}
 }
 } // namespace acpi

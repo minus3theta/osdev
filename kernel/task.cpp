@@ -52,9 +52,13 @@ Task &Task::InitContext(TaskFunc *f, int64_t data) {
   return *this;
 }
 
-TaskContext &Task::Context() { return context; }
+TaskContext &Task::Context() {
+  return context;
+}
 
-uint64_t Task::ID() const { return id; }
+uint64_t Task::ID() const {
+  return id;
+}
 
 Task &Task::Sleep() {
   task_manager->Sleep(this);

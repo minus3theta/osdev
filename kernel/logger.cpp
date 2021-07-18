@@ -12,7 +12,9 @@ LogLevel log_level = kWarn;
 
 extern Console *console;
 
-void setLogLevel(LogLevel level) { log_level = level; }
+void setLogLevel(LogLevel level) {
+  log_level = level;
+}
 
 int Log(LogLevel level, const char *format, ...) {
   if (level > log_level) {
