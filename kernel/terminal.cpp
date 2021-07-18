@@ -18,9 +18,13 @@ Terminal::Terminal() {
       layer_manager->NewLayer().SetWindow(window).SetDraggable(true).ID();
 }
 
-void Terminal::BlinkCursor() {
+Rectangle<int> Terminal::BlinkCursor() {
   cursor_visible = !cursor_visible;
   DrawCursor(cursor_visible);
+
+  return {ToplevelWindow::kTopLeftMargin +
+              Vector2D<int>{4 + 8 * cursor.x, 5 + 16 * cursor.y},
+          {7, 15}};
 }
 
 void Terminal::DrawCursor(bool visible) {
@@ -47,18 +51,14 @@ void TaskTerminal(uint64_t task_id, int64_t data) {
     }
 
     switch (msg->type) {
-    case Message::kTimerTimeout:
-      terminal->BlinkCursor();
-
-      {
-        Message msg{Message::kLayer, task_id};
-        msg.arg.layer.layer_id = terminal->LayerID();
-        msg.arg.layer.op = LayerOperation::Draw;
-        __asm__("cli");
-        task_manager->SendMessage(1, msg);
-        __asm__("sti");
-      }
-      break;
+    case Message::kTimerTimeout: {
+      const auto area = terminal->BlinkCursor();
+      Message msg = MakeLayerMessage(task_id, terminal->LayerID(),
+                                     LayerOperation::DrawArea, area);
+      __asm__("cli");
+      task_manager->SendMessage(1, msg);
+      __asm__("sti");
+    } break;
     default:
       break;
     }

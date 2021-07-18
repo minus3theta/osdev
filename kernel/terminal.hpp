@@ -9,7 +9,7 @@ public:
 
   Terminal();
   unsigned int LayerID() const { return layer_id; }
-  void BlinkCursor();
+  Rectangle<int> BlinkCursor();
 
 private:
   std::shared_ptr<ToplevelWindow> window;

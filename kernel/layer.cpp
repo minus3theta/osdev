@@ -10,6 +10,7 @@
 #include "graphics.hpp"
 #include "logger.hpp"
 #include "message.hpp"
+#include "timer.hpp"
 
 Layer::Layer(unsigned int id) : id(id) {}
 
@@ -105,12 +106,20 @@ void LayerManager::Draw(const Rectangle<int> &area) const {
 }
 
 void LayerManager::Draw(unsigned int id) const {
+  Draw(id, {{0, 0}, {-1, -1}});
+}
+
+void LayerManager::Draw(unsigned int id, Rectangle<int> area) const {
   bool draw = false;
   Rectangle<int> window_area;
   for (auto layer : layer_stack) {
     if (layer->ID() == id) {
       window_area.size = layer->GetWindow()->Size();
       window_area.pos = layer->GetPosition();
+      if (area.size.x >= 0 || area.size.y >= 0) {
+        area.pos = area.pos + window_area.pos;
+        window_area = window_area & area;
+      }
       draw = true;
     }
     if (draw) {
@@ -231,6 +240,9 @@ void ProcessLayerMessage(const Message &msg) {
     break;
   case LayerOperation::Draw:
     layer_manager->Draw(arg.layer_id);
+    break;
+  case LayerOperation::DrawArea:
+    layer_manager->Draw(arg.layer_id, {{arg.x, arg.y}, {arg.w, arg.h}});
     break;
   }
 }
