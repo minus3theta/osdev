@@ -1,5 +1,5 @@
--I../../osbook/devenv/x86_64-elf/include/c++/v1
--I../../osbook/devenv/x86_64-elf/include
+-I../../mikanos-build/devenv/x86_64-elf/include/c++/v1
+-I../../mikanos-build/devenv/x86_64-elf/include
 -nostdlibinc
 -D__ELF__
 -D_LDBL_EQ_DBL
