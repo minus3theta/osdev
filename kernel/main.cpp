@@ -28,6 +28,7 @@
 #include "pci.hpp"
 #include "segment.hpp"
 #include "task.hpp"
+#include "terminal.hpp"
 #include "timer.hpp"
 #include "usb/device.hpp"
 #include "usb/memory.hpp"
@@ -210,6 +211,8 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
   Task &main_task = task_manager->CurrentTask();
   const uint64_t taskb_id =
       task_manager->NewTask().InitContext(TaskB, 45).Wakeup().ID();
+  const uint64_t task_terminal_id =
+      task_manager->NewTask().InitContext(TaskTerminal, 0).Wakeup().ID();
 
   usb::xhci::Initialize();
   InitializeKeyboard();
@@ -252,6 +255,10 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
         textbox_cursor_visible = !textbox_cursor_visible;
         DrawTextCursor(textbox_cursor_visible);
         layer_manager->Draw(text_window_layer_id);
+
+        __asm__("cli");
+        task_manager->SendMessage(task_terminal_id, *msg);
+        __asm__("sti");
       }
       break;
     case Message::kKeyPush:
