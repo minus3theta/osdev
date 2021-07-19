@@ -1,4 +1,5 @@
 #include <array>
+#include <deque>
 #include <memory>
 
 #include "graphics.hpp"
@@ -28,6 +29,10 @@ private:
   int linebuf_index{0};
   std::array<char, kLineMax> linebuf{};
   void Scroll1();
+
+  std::deque<std::array<char, kLineMax>> cmd_history{};
+  int cmd_history_index{-1};
+  Rectangle<int> HistoryUpDown(int direction);
 };
 
 void TaskTerminal(uint64_t task_id, int64_t data);
