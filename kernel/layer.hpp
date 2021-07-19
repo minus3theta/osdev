@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -79,6 +80,7 @@ private:
 };
 
 inline ActiveLayer *active_layer;
+inline std::map<unsigned int, uint64_t> *layer_task_map;
 
 constexpr Message MakeLayerMessage(uint64_t task_id, unsigned int layer_id,
                                    LayerOperation op,

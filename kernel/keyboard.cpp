@@ -53,6 +53,7 @@ void InitializeKeyboard() {
     const bool shift = (modifier & (kLShiftBitMask | kRShiftBitMask)) != 0;
     char ascii = shift ? keycode_map_shifted[keycode] : keycode_map[keycode];
     Message msg{Message::kKeyPush};
+    msg.arg.keyboard.modifier = modifier;
     msg.arg.keyboard.keycode = keycode;
     msg.arg.keyboard.ascii = ascii;
     task_manager->SendMessage(1, msg);
