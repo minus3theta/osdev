@@ -108,9 +108,7 @@ void Terminal::Scroll1() {
                 {8 * kColumns, 16}, ToColor(0));
 }
 
-void Terminal::Print(const char *s) {
-  DrawCursor(false);
-
+void Terminal::Print(char c) {
   auto newline = [this]() {
     cursor.x = 0;
     if (cursor.y < kRows - 1) {
@@ -120,18 +118,23 @@ void Terminal::Print(const char *s) {
     }
   };
 
-  while (*s) {
-    if (*s == '\n') {
+  if (c == '\n') {
+    newline();
+  } else {
+    WriteAscii(*window, CalcCursorPos(), c, ToColor(0xffffff));
+    if (cursor.x == kColumns - 1) {
       newline();
     } else {
-      WriteAscii(*window, CalcCursorPos(), *s, ToColor(0xffffff));
-      if (cursor.x == kColumns - 1) {
-        newline();
-      } else {
-        ++cursor.x;
-      }
+      ++cursor.x;
     }
+  }
+}
 
+void Terminal::Print(const char *s) {
+  DrawCursor(false);
+
+  while (*s) {
+    Print(*s);
     ++s;
   }
 
@@ -165,6 +168,31 @@ void Terminal::ExecuteLine() {
               dev.class_code.base, dev.class_code.sub,
               dev.class_code.interface);
       Print(s);
+    }
+  } else if (strcmp(command, "cat") == 0) {
+    char s[64];
+
+    auto file_entry = fat::FindFile(first_arg);
+    if (!file_entry) {
+      sprintf(s, "no such file: %s\n", first_arg);
+      Print(s);
+    } else {
+      auto cluster = file_entry->FirstCluster();
+      auto remain_bytes = file_entry->file_size;
+
+      DrawCursor(false);
+      while (cluster != 0 && cluster != fat::kEndOfClusterchain) {
+        char *p = fat::GetSectorByCluster<char>(cluster);
+
+        int i = 0;
+        for (; i < fat::bytes_per_cluster && i < remain_bytes; ++i) {
+          Print(*p);
+          ++p;
+        }
+        remain_bytes -= i;
+        cluster = fat::NextCluster(cluster);
+      }
+      DrawCursor(true);
     }
   } else if (strcmp(command, "ls") == 0) {
     auto root_dir_entries = fat::GetSectorByCluster<fat::DirectoryEntry>(
