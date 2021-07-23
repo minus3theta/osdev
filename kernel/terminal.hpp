@@ -2,6 +2,7 @@
 #include <deque>
 #include <memory>
 
+#include "fat.hpp"
 #include "graphics.hpp"
 #include "window.hpp"
 
@@ -17,6 +18,7 @@ public:
   void Print(char c);
   void Print(const char *s);
   void ExecuteLine();
+  void ExecuteFile(const fat::DirectoryEntry &file_entry);
 
 private:
   std::shared_ptr<ToplevelWindow> window;
