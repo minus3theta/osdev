@@ -148,9 +148,7 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
 
   const int kTextboxCursorTimer = 1;
   const int kTimer05Sec = static_cast<int>(kTimerFreq * 0.5);
-  __asm__("cli");
   timer_manager->AddTimer(Timer{kTimer05Sec, kTextboxCursorTimer});
-  __asm__("sti");
   bool textbox_cursor_visible = false;
 
   InitializeTask();
@@ -179,7 +177,7 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
     auto msg = main_task.ReceiveMessage();
     if (!msg) {
       main_task.Sleep();
-      __asm__("sti\n\thlt");
+      __asm__("sti");
       continue;
     }
 
