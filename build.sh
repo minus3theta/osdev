@@ -1,5 +1,7 @@
 #!/bin/sh -eu
 
+. $HOME/work/mikanos-build/devenv/buildenv.sh
+
 make ${MAKE_OPTS:-} -C kernel kernel.elf
 
 for MK in $(ls apps/*/Makefile)
