@@ -228,3 +228,7 @@ Task *TaskManager::RotateCurrentRunQueue(bool current_sleep) {
 
   return current_task;
 }
+
+uint64_t &Task::OSStackPointer() {
+  return os_stack_ptr;
+}

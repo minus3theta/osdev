@@ -34,7 +34,7 @@ public:
   Task(uint64_t id);
   Task &InitContext(TaskFunc *f, int64_t data);
   TaskContext &Context();
-
+  uint64_t &OSStackPointer();
   uint64_t ID() const;
   Task &Sleep();
   Task &Wakeup();
@@ -49,6 +49,7 @@ private:
   uint64_t id;
   std::vector<uint64_t> stack;
   alignas(16) TaskContext context;
+  uint64_t os_stack_ptr;
   std::deque<Message> msgs;
   unsigned int level{kDefaultLevel};
   bool running{false};
