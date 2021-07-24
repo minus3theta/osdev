@@ -195,7 +195,7 @@ void TaskManager::ChangeLevelRunning(Task *task, int level) {
   }
 
   running[current_level].pop_front();
-  running[level].push_back(task);
+  running[level].push_front(task);
   task->SetLevel(level);
   if (level >= current_level) {
     current_level = level;
