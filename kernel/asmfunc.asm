@@ -100,7 +100,7 @@ SwitchContext:
   mov [rsi + 0x70], rax ; RSP
   mov [rsi + 0x78], rbp
 
-  mov [rsi + 0x80], r9
+  mov [rsi + 0x80], r8
   mov [rsi + 0x88], r9
   mov [rsi + 0x90], r10
   mov [rsi + 0x98], r11
