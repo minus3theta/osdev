@@ -29,6 +29,7 @@ public:
     kNoPCIMSI,
     kUnknownPixelFormat,
     kNoSuchTask,
+    kInvalidFormat,
     kLastOfCode,
   };
 
@@ -57,6 +58,7 @@ private:
       "kNoPCIMSI",
       "kNoSuchTask",
       "kUnknownPixelFormat",
+      "kInvalidFormat",
   };
   static_assert(Error::Code::kLastOfCode == code_names.size());
 

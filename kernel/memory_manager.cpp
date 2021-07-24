@@ -68,7 +68,6 @@ extern "C" caddr_t program_break, program_break_end;
 
 namespace {
 char memory_manager_buf[sizeof(BitmapMemoryManager)];
-BitmapMemoryManager *memory_manager;
 
 Error InitializeHeap(BitmapMemoryManager &memory_manager) {
   const int kHeapFrames = 64 * 512;

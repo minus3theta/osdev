@@ -60,3 +60,5 @@ private:
 };
 
 void InitializeMemoryManager(const MemoryMap &memory_map);
+
+inline BitmapMemoryManager *memory_manager;
