@@ -1,6 +1,10 @@
+#pragma once
+
 #include <array>
 #include <deque>
+#include <map>
 #include <memory>
+#include <optional>
 
 #include "fat.hpp"
 #include "graphics.hpp"
@@ -11,12 +15,12 @@ public:
   static const int kRows = 15, kColumns = 60;
   static const int kLineMax = 128;
 
-  Terminal();
+  Terminal(uint64_t task_id);
   unsigned int LayerID() const { return layer_id; }
   Rectangle<int> BlinkCursor();
   Rectangle<int> InputKey(uint8_t modifier, uint8_t keycode, char ascii);
   void Print(char c);
-  void Print(const char *s);
+  void Print(const char *s, std::optional<size_t> len = std::nullopt);
   void ExecuteLine();
   Error ExecuteFile(const fat::DirectoryEntry &file_entry, char *command,
                     char *first_arg);
@@ -24,6 +28,7 @@ public:
 private:
   std::shared_ptr<ToplevelWindow> window;
   unsigned int layer_id;
+  uint64_t task_id;
 
   Vector2D<int> cursor{0, 0};
   bool cursor_visible{false};
@@ -39,4 +44,5 @@ private:
   Rectangle<int> HistoryUpDown(int direction);
 };
 
+inline std::map<uint64_t, Terminal *> *terminals;
 void TaskTerminal(uint64_t task_id, int64_t data);

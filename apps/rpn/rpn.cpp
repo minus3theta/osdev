@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
@@ -38,10 +39,11 @@ extern "C" int main(int argc, char **argv) {
       SyscallLogString(kWarn, "#");
     }
   }
-  if (stack_ptr < 0) {
-    return 0;
+  long result = 0;
+  if (stack_ptr >= 0) {
+    result = Pop();
   }
-  SyscallLogString(kWarn, "\nhello, this is rpn\n");
+  printf("%ld\n", result);
   while (1) {}
   // return static_cast<int>(Pop());
 }
