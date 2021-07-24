@@ -98,30 +98,13 @@ Task &TaskManager::NewTask() {
   return *tasks.emplace_back(new Task{latest_id});
 }
 
-void TaskManager::SwitchTask(bool current_sleep) {
-  auto &level_queue = running[current_level];
-  Task *current_task = level_queue.front();
-  level_queue.pop_front();
-  if (!current_sleep) {
-    level_queue.push_back(current_task);
+void TaskManager::SwitchTask(const TaskContext &current_ctx) {
+  TaskContext &task_ctx = task_manager->CurrentTask().Context();
+  memcpy(&task_ctx, &current_ctx, sizeof(TaskContext));
+  Task *current_task = RotateCurrentRunQueue(false);
+  if (&CurrentTask() != current_task) {
+    RestoreContext(&CurrentTask().Context());
   }
-  if (level_queue.empty()) {
-    level_changed = true;
-  }
-
-  if (level_changed) {
-    level_changed = false;
-    for (int lv = kMaxLevel; lv >= 0; --lv) {
-      if (!running[lv].empty()) {
-        current_level = lv;
-        break;
-      }
-    }
-  }
-
-  Task *next_task = running[current_level].front();
-
-  SwitchContext(&next_task->Context(), &current_task->Context());
 }
 
 void TaskManager::Sleep(Task *task) {
@@ -132,7 +115,8 @@ void TaskManager::Sleep(Task *task) {
   task->SetRunning(false);
 
   if (task == running[current_level].front()) {
-    SwitchTask(true);
+    Task *current_task = RotateCurrentRunQueue(true);
+    SwitchContext(&CurrentTask().Context(), &current_task->Context());
     return;
   }
 
@@ -219,4 +203,28 @@ void TaskManager::ChangeLevelRunning(Task *task, int level) {
     current_level = level;
     level_changed = true;
   }
+}
+
+Task *TaskManager::RotateCurrentRunQueue(bool current_sleep) {
+  auto &level_queue = running[current_level];
+  Task *current_task = level_queue.front();
+  level_queue.pop_front();
+  if (!current_sleep) {
+    level_queue.push_back(current_task);
+  }
+  if (level_queue.empty()) {
+    level_changed = true;
+  }
+
+  if (level_changed) {
+    level_changed = false;
+    for (int lv = kMaxLevel; lv >= 0; --lv) {
+      if (!running[lv].empty()) {
+        current_level = lv;
+        break;
+      }
+    }
+  }
+
+  return current_task;
 }

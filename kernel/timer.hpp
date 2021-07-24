@@ -6,6 +6,7 @@
 #include <queue>
 
 #include "message.hpp"
+#include "task.hpp"
 
 void InitializeLAPICTimer();
 void StartLAPICTimer();
@@ -45,5 +46,3 @@ const int kTimerFreq = 100;
 
 const int kTaskTimerPeriod = static_cast<int>(kTimerFreq * 0.02);
 const int kTaskTimerValue = std::numeric_limits<int>::min();
-
-void LAPICTimerOnInterrupt();

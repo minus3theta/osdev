@@ -72,7 +72,7 @@ public:
 
   TaskManager();
   Task &NewTask();
-  void SwitchTask(bool current_sleep = false);
+  void SwitchTask(const TaskContext &ctx_stack);
 
   void Sleep(Task *task);
   Error Sleep(uint64_t id);
@@ -90,6 +90,7 @@ private:
   bool level_changed{false};
 
   void ChangeLevelRunning(Task *task, int level);
+  Task *RotateCurrentRunQueue(bool current_sleep);
 };
 
 inline TaskManager *task_manager;
