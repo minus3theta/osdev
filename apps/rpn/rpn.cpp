@@ -33,5 +33,6 @@ extern "C" int main(int argc, char **argv) {
   if (stack_ptr < 0) {
     return 0;
   }
-  return static_cast<int>(Pop());
+  while (1) {}
+  // return static_cast<int>(Pop());
 }
