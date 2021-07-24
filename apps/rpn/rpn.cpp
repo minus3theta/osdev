@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "../../kernel/logger.hpp"
+#include "../syscall.hpp"
 
 int stack_ptr;
 long stack[100];
@@ -16,10 +17,6 @@ long Pop() {
 void Push(long value) {
   stack[++stack_ptr] = value;
 }
-
-extern "C" int64_t SyscallLogString(LogLevel, const char *);
-
-extern "C" int64_t SyscallExit(int);
 
 extern "C" int main(int argc, char **argv) {
   stack_ptr = -1;
