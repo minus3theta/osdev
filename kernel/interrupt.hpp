@@ -41,6 +41,8 @@ MakeIDTAttr(DescriptorType type, uint8_t descriptor_privilege_level,
   return attr;
 }
 
+const int kISTForTimer = 1;
+
 void SetIDTEntry(InterruptDescriptor &desc, InterruptDescriptorAttribute attr,
                  uint64_t offset, uint16_t segment_selector);
 
