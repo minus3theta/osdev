@@ -7,6 +7,7 @@
 #include "layer.hpp"
 #include "task.hpp"
 #include "usb/classdriver/mouse.hpp"
+#include "window.hpp"
 
 namespace {
 const char mouse_cursor_shape[kMouseCursorHeight][kMouseCursorWidth + 1] = {
@@ -39,7 +40,7 @@ const char mouse_cursor_shape[kMouseCursorHeight][kMouseCursorWidth + 1] = {
 };
 
 void SendMouseMessage(Vector2D<int> newpos, Vector2D<int> posdiff,
-                      uint8_t buttons) {
+                      uint8_t buttons, uint8_t previous_buttons) {
   const auto act = active_layer->GetActive();
   if (!act) {
     return;
@@ -51,8 +52,8 @@ void SendMouseMessage(Vector2D<int> newpos, Vector2D<int> posdiff,
     return;
   }
 
+  const auto relpos = newpos - layer->GetPosition();
   if (posdiff.x != 0 || posdiff.y != 0) {
-    const auto relpos = newpos - layer->GetPosition();
     Message msg{Message::kMouseMove};
     msg.arg.mouse_move.x = relpos.x;
     msg.arg.mouse_move.y = relpos.y;
@@ -60,6 +61,20 @@ void SendMouseMessage(Vector2D<int> newpos, Vector2D<int> posdiff,
     msg.arg.mouse_move.dy = posdiff.y;
     msg.arg.mouse_move.buttons = buttons;
     task_manager->SendMessage(task_it->second, msg);
+  }
+
+  if (previous_buttons != buttons) {
+    const auto diff = previous_buttons ^ buttons;
+    for (int i = 0; i < 8; ++i) {
+      if ((diff >> i) & 1) {
+        Message msg{Message::kMouseButton};
+        msg.arg.mouse_button.x = relpos.x;
+        msg.arg.mouse_button.y = relpos.y;
+        msg.arg.mouse_button.press = (buttons >> i) & 1;
+        msg.arg.mouse_button.button = i;
+        task_manager->SendMessage(task_it->second, msg);
+      }
+    }
   }
 }
 } // namespace
@@ -102,7 +117,10 @@ void Mouse::OnInterrupt(uint8_t buttons, int8_t displacement_x,
   if (!previous_left_pressed && left_pressed) {
     auto layer = layer_manager->FindLayerByPosition(position, layer_id);
     if (layer && layer->IsDraggable()) {
-      drag_layer_id = layer->ID();
+      const auto y_layer = position.y - layer->GetPosition().y;
+      if (y_layer < ToplevelWindow::kTopLeftMargin.y) {
+        drag_layer_id = layer->ID();
+      }
       active_layer->Activate(layer->ID());
     } else {
       active_layer->Activate(0);
@@ -116,7 +134,7 @@ void Mouse::OnInterrupt(uint8_t buttons, int8_t displacement_x,
   }
 
   if (drag_layer_id == 0) {
-    SendMouseMessage(newpos, posdiff, buttons);
+    SendMouseMessage(newpos, posdiff, buttons, previous_buttons);
   }
 
   previous_buttons = buttons;
