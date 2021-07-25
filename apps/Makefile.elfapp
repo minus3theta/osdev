@@ -12,7 +12,7 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	ld.lld $(LDFLAGS) -o $@ $^ -lc -lc++ -lc++abi
 
-%.o: %.cpp
+%.o: %.cpp ../syscall.h
 	clang++ $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 %.o: %.asm
