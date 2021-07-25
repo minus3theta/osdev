@@ -1,9 +1,9 @@
 #include <cstdlib>
 
-#include "../syscall.hpp"
+#include "../syscall.h"
 
 char table[3 * 1024 * 1024];
 
 extern "C" int main(int argc, char **argv) {
-  SyscallExit(atoi(argv[1]));
+  exit(atoi(argv[1]));
 }
