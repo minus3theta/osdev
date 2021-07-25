@@ -51,6 +51,8 @@ public:
   Layer *FindLayer(unsigned int id);
   int GetHeight(unsigned int id);
 
+  void RemoveLayer(unsigned int id);
+
 private:
   FrameBuffer *screen{nullptr};
   mutable FrameBuffer back_buffer;

@@ -12,6 +12,13 @@
 #include "message.hpp"
 #include "timer.hpp"
 
+namespace {
+template <class T, class U> void EraseIf(T &c, const U &pred) {
+  auto it = std::remove_if(c.begin(), c.end(), pred);
+  c.erase(it, c.end());
+}
+} // namespace
+
 Layer::Layer(unsigned int id) : id(id) {}
 
 Layer &Layer::SetWindow(const std::shared_ptr<Window> &window) {
@@ -191,6 +198,15 @@ int LayerManager::GetHeight(unsigned int id) {
     }
   }
   return -1;
+}
+
+void LayerManager::RemoveLayer(unsigned int id) {
+  Hide(id);
+
+  auto pred = [id](const std::unique_ptr<Layer> &elem) {
+    return elem->ID() == id;
+  };
+  EraseIf(layers, pred);
 }
 
 namespace {
