@@ -8,11 +8,13 @@
 
 #include "asmfunc.hpp"
 #include "font.hpp"
+#include "graphics.hpp"
 #include "layer.hpp"
 #include "logger.hpp"
 #include "msr.hpp"
 #include "task.hpp"
 #include "terminal.hpp"
+#include "window.hpp"
 
 namespace syscall {
 struct Result {
@@ -23,6 +25,29 @@ struct Result {
 #define SYSCALL(name)                                                          \
   Result name(uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4,      \
               uint64_t arg5, uint64_t arg6)
+
+namespace {
+template <class Func, class... Args>
+Result DoWinFunc(Func f, unsigned int layer_id, Args... args) {
+  __asm__("cli");
+  auto layer = layer_manager->FindLayer(layer_id);
+  __asm__("sti");
+  if (layer == nullptr) {
+    return {0, EBADF};
+  }
+
+  const auto res = f(*layer->GetWindow(), args...);
+  if (res.error) {
+    return res;
+  }
+
+  __asm__("cli");
+  layer_manager->Draw(layer_id);
+  __asm__("sti");
+
+  return res;
+}
+} // namespace
 
 SYSCALL(LogString) {
   if (arg1 != kError && arg1 != kWarn && arg1 != kInfo && arg1 != kDebug) {
@@ -79,24 +104,21 @@ SYSCALL(OpenWindow) {
 }
 
 SYSCALL(WinWriteString) {
-  const unsigned int layer_id = arg1;
-  const int x = arg2, y = arg3;
-  const uint32_t color = arg4;
-  const auto s = reinterpret_cast<const char *>(arg5);
+  return DoWinFunc(
+      [](Window &win, int x, int y, uint32_t color, const char *s) {
+        WriteString(win, {x, y}, s, ToColor(color));
+        return Result{0, 0};
+      },
+      arg1, arg2, arg3, arg4, reinterpret_cast<const char *>(arg5));
+}
 
-  __asm__("cli");
-  auto layer = layer_manager->FindLayer(layer_id);
-  __asm__("sti");
-  if (layer == nullptr) {
-    return {0, EBADF};
-  }
-
-  WriteString(*layer->GetWindow(), {x, y}, s, ToColor(color));
-  __asm__("cli");
-  layer_manager->Draw(layer_id);
-  __asm__("sti");
-
-  return {0, 0};
+SYSCALL(WinFillRectangle) {
+  return DoWinFunc(
+      [](Window &win, int x, int y, int w, int h, uint32_t color) {
+        FillRectangle(win, {x, y}, {w, h}, ToColor(color));
+        return Result{0, 0};
+      },
+      arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 #undef SYSCALL
@@ -104,12 +126,13 @@ SYSCALL(WinWriteString) {
 
 using SyscallFuncType = syscall::Result(uint64_t, uint64_t, uint64_t, uint64_t,
                                         uint64_t, uint64_t);
-extern "C" std::array<SyscallFuncType *, 5> syscall_table{
+extern "C" std::array<SyscallFuncType *, 6> syscall_table{
     /* 0x00 */ syscall::LogString,
     /* 0x01 */ syscall::PutString,
     /* 0x02 */ syscall::Exit,
     /* 0x03 */ syscall::OpenWindow,
     /* 0x04 */ syscall::WinWriteString,
+    /* 0x05 */ syscall::WinFillRectangle,
 };
 
 void InitializeSyscall() {
