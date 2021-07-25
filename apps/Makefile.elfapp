@@ -10,7 +10,7 @@ OBJS += ../syscall.o ../newlib_support.o
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	ld.lld $(LDFLAGS) -o $@ $^ -lc -lc++ -lc++abi
+	ld.lld $(LDFLAGS) -o $@ $^ -lc -lc++ -lc++abi -lm
 
 %.o: %.cpp ../syscall.h
 	clang++ $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@

@@ -27,7 +27,7 @@ clean:
 	$(RM) *.o
 
 kernel.elf: $(OBJS)
-	$(LD) $(LDFLAGS) -o kernel.elf $^ -lc -lc++ -lc++abi
+	$(LD) $(LDFLAGS) -o kernel.elf $^ -lc -lc++ -lc++abi -lm
 
 %.o: %.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
