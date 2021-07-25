@@ -1,0 +1,6 @@
+-O2
+-Wall
+-g
+-fno-exceptions
+-fno-rtti
+-std=c++17
