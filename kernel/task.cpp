@@ -232,3 +232,8 @@ Task *TaskManager::RotateCurrentRunQueue(bool current_sleep) {
 uint64_t &Task::OSStackPointer() {
   return os_stack_ptr;
 }
+
+__attribute__((no_caller_saved_registers)) extern "C" uint64_t
+GetCurrentTaskOSStackPointer() {
+  return task_manager->CurrentTask().OSStackPointer();
+}
