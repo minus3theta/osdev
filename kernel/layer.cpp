@@ -5,11 +5,13 @@
 #include <memory>
 
 #include "console.hpp"
+#include "error.hpp"
 #include "frame_buffer.hpp"
 #include "frame_buffer_config.hpp"
 #include "graphics.hpp"
 #include "logger.hpp"
 #include "message.hpp"
+#include "task.hpp"
 #include "timer.hpp"
 
 namespace {
@@ -211,7 +213,18 @@ void LayerManager::RemoveLayer(unsigned int id) {
 
 namespace {
 FrameBuffer *screen;
+
+Error SendWindowActiveMessage(unsigned int layer_id, bool activate) {
+  auto task_it = layer_task_map->find(layer_id);
+  if (task_it == layer_task_map->end()) {
+    return MAKE_ERROR(Error::kNoSuchTask);
+  }
+
+  Message msg{Message::kWindowActive};
+  msg.arg.window_active.activate = activate;
+  return task_manager->SendMessage(task_it->second, msg);
 }
+} // namespace
 
 void InitializeLayer() {
   const auto screen_size = ScreenSize();
@@ -280,6 +293,7 @@ void ActiveLayer::Activate(unsigned int layer_id) {
     Layer *layer = manager.FindLayer(active_layer);
     layer->GetWindow()->Deactivate();
     manager.Draw(active_layer);
+    SendWindowActiveMessage(active_layer, false);
   }
 
   active_layer = layer_id;
@@ -288,5 +302,6 @@ void ActiveLayer::Activate(unsigned int layer_id) {
     layer->GetWindow()->Activate();
     manager.UpDown(active_layer, manager.GetHeight(mouse_layer) - 1);
     manager.Draw(active_layer);
+    SendWindowActiveMessage(active_layer, true);
   }
 }
