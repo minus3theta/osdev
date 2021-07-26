@@ -259,17 +259,20 @@ Error FreePML4(Task &current_task) {
 }
 } // namespace
 
-Terminal::Terminal(uint64_t task_id) : task_id{task_id} {
-  window = std::make_shared<ToplevelWindow>(
-      kColumns * 8 + 8 + ToplevelWindow::kMarginX,
-      kRows * 16 + 8 + ToplevelWindow::kMarginY, screen_config.pixel_format,
-      "MikanTerm");
-  DrawTerminal(*window->InnerWriter(), {0, 0}, window->InnerSize());
+Terminal::Terminal(uint64_t task_id, bool show_window)
+    : task_id{task_id}, show_window{show_window} {
+  if (show_window) {
+    window = std::make_shared<ToplevelWindow>(
+        kColumns * 8 + 8 + ToplevelWindow::kMarginX,
+        kRows * 16 + 8 + ToplevelWindow::kMarginY, screen_config.pixel_format,
+        "MikanTerm");
+    DrawTerminal(*window->InnerWriter(), {0, 0}, window->InnerSize());
 
-  layer_id =
-      layer_manager->NewLayer().SetWindow(window).SetDraggable(true).ID();
+    layer_id =
+        layer_manager->NewLayer().SetWindow(window).SetDraggable(true).ID();
 
-  Print(">");
+    Print(">");
+  }
   cmd_history.resize(8);
 }
 
@@ -281,8 +284,10 @@ Rectangle<int> Terminal::BlinkCursor() {
 }
 
 void Terminal::DrawCursor(bool visible) {
-  const auto color = visible ? ToColor(0xffffff) : ToColor(0);
-  FillRectangle(*window, CalcCursorPos(), {7, 15}, color);
+  if (show_window) {
+    const auto color = visible ? ToColor(0xffffff) : ToColor(0);
+    FillRectangle(*window, CalcCursorPos(), {7, 15}, color);
+  }
 }
 
 Vector2D<int> Terminal::CalcCursorPos() const {
@@ -318,7 +323,9 @@ Rectangle<int> Terminal::InputKey(uint8_t modifier, uint8_t keycode,
   } else if (ascii == '\b') {
     if (cursor.x > 0) {
       --cursor.x;
-      FillRectangle(*window, CalcCursorPos(), {8, 16}, ToColor(0));
+      if (show_window) {
+        FillRectangle(*window, CalcCursorPos(), {8, 16}, ToColor(0));
+      }
       draw_area.pos = CalcCursorPos();
 
       if (linebuf_index > 0) {
@@ -329,7 +336,9 @@ Rectangle<int> Terminal::InputKey(uint8_t modifier, uint8_t keycode,
     if (cursor.x < kColumns - 1 && linebuf_index < kLineMax - 1) {
       linebuf[linebuf_index] = ascii;
       ++linebuf_index;
-      WriteAscii(*window, CalcCursorPos(), ascii, ToColor(0xffffff));
+      if (show_window) {
+        WriteAscii(*window, CalcCursorPos(), ascii, ToColor(0xffffff));
+      }
       ++cursor.x;
     }
   } else if (keycode == 0x51) { // down arrow
@@ -365,7 +374,9 @@ void Terminal::Print(char c) {
   if (c == '\n') {
     newline();
   } else {
-    WriteAscii(*window, CalcCursorPos(), c, ToColor(0xffffff));
+    if (show_window) {
+      WriteAscii(*window, CalcCursorPos(), c, ToColor(0xffffff));
+    }
     if (cursor.x == kColumns - 1) {
       newline();
     } else {
@@ -419,8 +430,10 @@ void Terminal::ExecuteLine() {
     }
     Print("\n");
   } else if (strcmp(command, "clear") == 0) {
-    FillRectangle(*window->InnerWriter(), {4, 4}, {8 * kColumns, 16 * kRows},
-                  ToColor(0));
+    if (show_window) {
+      FillRectangle(*window->InnerWriter(), {4, 4}, {8 * kColumns, 16 * kRows},
+                    ToColor(0));
+    }
     cursor.y = 0;
   } else if (strcmp(command, "lspci") == 0) {
     char s[64];
@@ -483,6 +496,10 @@ void Terminal::ExecuteLine() {
       }
       Print(s);
     }
+  } else if (strcmp(command, "noterm") == 0) {
+    task_manager->NewTask()
+        .InitContext(TaskTerminal, reinterpret_cast<int64_t>(first_arg))
+        .Wakeup();
   } else if (command[0] != 0) {
     auto file_entry = fat::FindFile(command);
     if (!file_entry) {
@@ -590,14 +607,26 @@ Rectangle<int> Terminal::HistoryUpDown(int direction) {
 }
 
 void TaskTerminal(uint64_t task_id, int64_t data) {
+  const char *command_line = reinterpret_cast<char *>(data);
+  const bool show_window = command_line == nullptr;
+
   __asm__("cli");
   Task &task = task_manager->CurrentTask();
-  Terminal *terminal = new Terminal{task_id};
-  layer_manager->Move(terminal->LayerID(), {100, 200});
-  active_layer->Activate(terminal->LayerID());
-  layer_task_map->insert(std::make_pair(terminal->LayerID(), task_id));
+  Terminal *terminal = new Terminal{task_id, show_window};
+  if (show_window) {
+    layer_manager->Move(terminal->LayerID(), {100, 200});
+    active_layer->Activate(terminal->LayerID());
+    layer_task_map->insert(std::make_pair(terminal->LayerID(), task_id));
+  }
   (*terminals)[task_id] = terminal;
   __asm__("sti");
+
+  if (command_line) {
+    for (const char *p = command_line; *p; ++p) {
+      terminal->InputKey(0, 0, *p);
+    }
+    terminal->InputKey(0, 0, '\n');
+  }
 
   auto add_blink_timer = [task_id](unsigned long t) {
     timer_manager->AddTimer(
@@ -620,7 +649,7 @@ void TaskTerminal(uint64_t task_id, int64_t data) {
     switch (msg->type) {
     case Message::kTimerTimeout: {
       add_blink_timer(msg->arg.timer.timeout);
-      if (window_isactive) {
+      if (show_window && window_isactive) {
         const auto area = terminal->BlinkCursor();
         Message msg = MakeLayerMessage(task_id, terminal->LayerID(),
                                        LayerOperation::DrawArea, area);
@@ -635,11 +664,13 @@ void TaskTerminal(uint64_t task_id, int64_t data) {
         const auto area = terminal->InputKey(msg->arg.keyboard.modifier,
                                              msg->arg.keyboard.keycode,
                                              msg->arg.keyboard.ascii);
-        Message msg = MakeLayerMessage(task_id, terminal->LayerID(),
-                                       LayerOperation::DrawArea, area);
-        __asm__("cli");
-        task_manager->SendMessage(1, msg);
-        __asm__("sti");
+        if (show_window) {
+          Message msg = MakeLayerMessage(task_id, terminal->LayerID(),
+                                         LayerOperation::DrawArea, area);
+          __asm__("cli");
+          task_manager->SendMessage(1, msg);
+          __asm__("sti");
+        }
       }
       break;
     }
