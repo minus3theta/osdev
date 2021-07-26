@@ -307,8 +307,13 @@ SyscallEntry:
   o64 sysret
 
 .exit:
-  mov rsp, rax
-  mov eax, edx
+  mov rdi, rax
+  mov esi, edx
+
+global ExitApp ; void ExitApp(uint64_t rsp, int32_t ret_val);
+ExitApp:
+  mov rsp, rdi
+  mov eax, esi
 
   pop r15
   pop r14

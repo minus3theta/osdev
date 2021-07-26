@@ -30,6 +30,7 @@ public:
     kUnknownPixelFormat,
     kNoSuchTask,
     kInvalidFormat,
+    kInvalidFile,
     kLastOfCode,
   };
 
@@ -59,6 +60,7 @@ private:
       "kNoSuchTask",
       "kUnknownPixelFormat",
       "kInvalidFormat",
+      "kInvalidFile",
   };
   static_assert(Error::Code::kLastOfCode == code_names.size());
 
