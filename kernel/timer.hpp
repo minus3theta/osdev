@@ -15,13 +15,15 @@ void StopLAPICTimer();
 
 class Timer {
 public:
-  Timer(unsigned long timeout, int value);
+  Timer(unsigned long timeout, int value, uint64_t task_id);
   unsigned long Timeout() const { return timeout; }
   int Value() const { return value; }
+  uint64_t TaskID() const { return task_id; }
 
 private:
   unsigned long timeout;
   int value;
+  uint64_t task_id;
 };
 
 inline bool operator<(const Timer &lhs, const Timer &rhs) {
@@ -45,4 +47,4 @@ inline unsigned long lapic_timer_freq;
 const int kTimerFreq = 100;
 
 const int kTaskTimerPeriod = static_cast<int>(kTimerFreq * 0.02);
-const int kTaskTimerValue = std::numeric_limits<int>::min();
+const int kTaskTimerValue = std::numeric_limits<int>::max();
