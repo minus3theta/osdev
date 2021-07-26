@@ -40,13 +40,14 @@ const char keycode_map_shifted[256] = {
 
 void InitializeKeyboard() {
   usb::HIDKeyboardDriver::default_observer = [](uint8_t modifier,
-                                                uint8_t keycode) {
+                                                uint8_t keycode, bool press) {
     const bool shift = (modifier & (kLShiftBitMask | kRShiftBitMask)) != 0;
     char ascii = shift ? keycode_map_shifted[keycode] : keycode_map[keycode];
     Message msg{Message::kKeyPush};
     msg.arg.keyboard.modifier = modifier;
     msg.arg.keyboard.keycode = keycode;
     msg.arg.keyboard.ascii = ascii;
+    msg.arg.keyboard.press = press;
     task_manager->SendMessage(1, msg);
   };
 }

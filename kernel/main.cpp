@@ -101,7 +101,7 @@ void InputTextWindow(char c) {
 
   auto pos = []() { return Vector2D<int>{4 + 8 * text_window_index, 6}; };
 
-  const int max_chars = (text_window->InnerSize().x - 8) / 8;
+  const int max_chars = (text_window->InnerSize().x - 8) / 8 - 1;
   if (c == '\b' && text_window_index > 0) {
     DrawTextCursor(false);
     --text_window_index;
@@ -209,7 +209,9 @@ KernelMainNewStack(const FrameBufferConfig &frame_buffer_config_ref,
       break;
     case Message::kKeyPush:
       if (auto act = active_layer->GetActive(); act == text_window_layer_id) {
-        InputTextWindow(msg->arg.keyboard.ascii);
+        if (msg->arg.keyboard.press) {
+          InputTextWindow(msg->arg.keyboard.ascii);
+        }
       } else {
         __asm__("cli");
         auto task_it = layer_task_map->find(act);
