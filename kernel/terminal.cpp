@@ -3,6 +3,7 @@
 #include <cctype>
 #include <cstdio>
 #include <cstring>
+#include <fstream>
 #include <memory>
 #include <optional>
 #include <utility>
@@ -257,6 +258,32 @@ Error FreePML4(Task &current_task) {
   const FrameID frame{cr3 / kBytesPerFrame};
   return memory_manager->Free(frame, 1);
 }
+
+void ListAllEntries(Terminal *term, uint32_t dir_cluster) {
+  const auto kEntriesPerCluster =
+      fat::bytes_per_cluster / sizeof(fat::DirectoryEntry);
+
+  while (dir_cluster != fat::kEndOfClusterchain) {
+    auto dir = fat::GetSectorByCluster<fat::DirectoryEntry>(dir_cluster);
+
+    for (int i = 0; i < kEntriesPerCluster; ++i) {
+      if (dir[i].name[0] == 0x00) {
+        return;
+      } else if (static_cast<uint8_t>(dir[i].name[0] == 0xe5)) {
+        continue;
+      } else if (dir[i].attr == fat::Attribute::kLongName) {
+        continue;
+      }
+
+      char name[13];
+      fat::FormatName(dir[i], name);
+      term->Print(name);
+      term->Print("\n");
+    }
+
+    dir_cluster = fat::NextCluster(dir_cluster);
+  }
+}
 } // namespace
 
 Terminal::Terminal(uint64_t task_id, bool show_window)
@@ -449,10 +476,15 @@ void Terminal::ExecuteLine() {
   } else if (strcmp(command, "cat") == 0) {
     char s[64];
 
-    auto file_entry = fat::FindFile(first_arg);
+    auto [file_entry, post_slash] = fat::FindFile(first_arg);
     if (!file_entry) {
       sprintf(s, "no such file: %s\n", first_arg);
       Print(s);
+    } else if (file_entry->attr != fat::Attribute::kDirectory && post_slash) {
+      char name[13];
+      fat::FormatName(*file_entry, name);
+      Print(name);
+      Print(" is not a directory\n");
     } else {
       auto cluster = file_entry->FirstCluster();
       auto remain_bytes = file_entry->file_size;
@@ -472,40 +504,43 @@ void Terminal::ExecuteLine() {
       DrawCursor(true);
     }
   } else if (strcmp(command, "ls") == 0) {
-    auto root_dir_entries = fat::GetSectorByCluster<fat::DirectoryEntry>(
-        fat::boot_volume_image->root_cluster);
-    auto entries_per_cluster = fat::boot_volume_image->bytes_per_sector /
-                               sizeof(fat::DirectoryEntry) *
-                               fat::boot_volume_image->sectors_per_cluster;
-    char base[9], ext[4];
-    char s[64];
-    for (int i = 0; i < entries_per_cluster; ++i) {
-      fat::ReadName(root_dir_entries[i], base, ext);
-      if (base[0] == 0x00) {
-        break;
-      } else if (static_cast<uint8_t>(base[0]) == 0xe5) {
-        continue;
-      } else if (root_dir_entries[i].attr == fat::Attribute::kLongName) {
-        continue;
-      }
-
-      if (ext[0]) {
-        sprintf(s, "%s.%s\n", base, ext);
+    if (first_arg[0] == '\0') {
+      ListAllEntries(this, fat::boot_volume_image->root_cluster);
+    } else {
+      auto [dir, post_slash] = fat::FindFile(first_arg);
+      if (dir == nullptr) {
+        Print("No such file or directory: ");
+        Print(first_arg);
+        Print("\n");
+      } else if (dir->attr == fat::Attribute::kDirectory) {
+        ListAllEntries(this, dir->FirstCluster());
       } else {
-        sprintf(s, "%s\n", base);
+        char name[13];
+        fat::FormatName(*dir, name);
+        if (post_slash) {
+          Print(name);
+          Print(" is not a directory\n");
+        } else {
+          Print(name);
+          Print("\n");
+        }
       }
-      Print(s);
     }
   } else if (strcmp(command, "noterm") == 0) {
     task_manager->NewTask()
         .InitContext(TaskTerminal, reinterpret_cast<int64_t>(first_arg))
         .Wakeup();
   } else if (command[0] != 0) {
-    auto file_entry = fat::FindFile(command);
+    auto [file_entry, post_slash] = fat::FindFile(command);
     if (!file_entry) {
       Print("no such command: ");
       Print(command);
       Print("\n");
+    } else if (file_entry->attr != fat::Attribute::kDirectory && post_slash) {
+      char name[13];
+      fat::FormatName(*file_entry, name);
+      Print(name);
+      Print(" is not a directory\n");
     } else if (auto err = ExecuteFile(*file_entry, command, first_arg)) {
       Print("failed to exec file: ");
       Print(err.Name());
