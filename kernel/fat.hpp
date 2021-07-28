@@ -89,4 +89,16 @@ std::pair<DirectoryEntry *, bool> FindFile(const char *path,
 bool NameIsEqual(const DirectoryEntry &entry, const char *name);
 
 size_t LoadFile(void *buf, size_t len, const DirectoryEntry &entry);
+
+class FileDescriptor {
+public:
+  explicit FileDescriptor(DirectoryEntry &fat_entry);
+  size_t Read(void *buf, size_t len);
+
+private:
+  DirectoryEntry &fat_entry;
+  size_t rd_off = 0;
+  unsigned long rd_cluster = 0;
+  size_t rd_cluster_off = 0;
+};
 } // namespace fat

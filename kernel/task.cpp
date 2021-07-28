@@ -70,6 +70,10 @@ Task &Task::Wakeup() {
   return *this;
 }
 
+std::vector<std::unique_ptr<fat::FileDescriptor>> &Task::Files() {
+  return files;
+}
+
 void Task::SendMessage(const Message &msg) {
   msgs.push_back(msg);
   Wakeup();

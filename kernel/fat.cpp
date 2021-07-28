@@ -1,6 +1,9 @@
 #include "fat.hpp"
+#include "sys/_stdint.h"
 
+#include <algorithm>
 #include <cctype>
+#include <cstddef>
 #include <cstring>
 #include <utility>
 
@@ -144,4 +147,33 @@ size_t LoadFile(void *buf, size_t len, const DirectoryEntry &entry) {
   }
   return p - buf_uint8;
 }
+
+FileDescriptor::FileDescriptor(DirectoryEntry &fat_entry)
+    : fat_entry(fat_entry) {}
+
+size_t FileDescriptor::Read(void *buf, size_t len) {
+  if (rd_cluster == 0) {
+    rd_cluster = fat_entry.FirstCluster();
+  }
+  uint8_t *buf8 = reinterpret_cast<uint8_t *>(buf);
+  len = std::min(len, fat_entry.file_size - rd_off);
+
+  size_t total = 0;
+  while (total < len) {
+    uint8_t *sec = GetSectorByCluster<uint8_t>(rd_cluster);
+    size_t n = std::min(len - total, bytes_per_cluster - rd_cluster_off);
+    memcpy(&buf8[total], &sec[rd_cluster_off], n);
+    total += n;
+
+    rd_cluster_off += n;
+    if (rd_cluster_off == bytes_per_cluster) {
+      rd_cluster = NextCluster(rd_cluster);
+      rd_cluster_off = 0;
+    }
+  }
+
+  rd_off += total;
+  return total;
+}
+
 } // namespace fat
