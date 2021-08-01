@@ -595,7 +595,10 @@ Error Terminal::ExecuteFile(const fat::DirectoryEntry &file_entry,
     return err;
   }
 
-  task.Files().push_back(std::make_unique<TerminalFileDescriptor>(task, *this));
+  for (int i = 0; i < 3; ++i) {
+    task.Files().push_back(
+        std::make_unique<TerminalFileDescriptor>(task, *this));
+  }
 
   auto entry_addr = elf_header->e_entry;
 
@@ -655,7 +658,6 @@ void TaskTerminal(uint64_t task_id, int64_t data) {
     active_layer->Activate(terminal->LayerID());
     layer_task_map->insert(std::make_pair(terminal->LayerID(), task_id));
   }
-  (*terminals)[task_id] = terminal;
   __asm__("sti");
 
   if (command_line) {
@@ -752,4 +754,9 @@ size_t TerminalFileDescriptor::Read(void *buf, size_t len) {
     term.Print(bufc, 1);
     return 1;
   }
+}
+
+size_t TerminalFileDescriptor::Write(const void *buf, size_t len) {
+  term.Print(reinterpret_cast<const char *>(buf), len);
+  return len;
 }

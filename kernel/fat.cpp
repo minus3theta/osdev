@@ -1,10 +1,7 @@
 #include "fat.hpp"
-#include "error.hpp"
-#include "sys/_stdint.h"
 
 #include <algorithm>
 #include <cctype>
-#include <cstddef>
 #include <cstring>
 #include <utility>
 
@@ -63,12 +60,8 @@ void FormatName(const DirectoryEntry &entry, char *dest) {
 }
 
 unsigned long NextCluster(unsigned long cluster) {
-  uintptr_t fat_offset = boot_volume_image->reserved_sector_count *
-                         boot_volume_image->bytes_per_sector;
-  uint32_t *fat = reinterpret_cast<uint32_t *>(
-      reinterpret_cast<uintptr_t>(boot_volume_image) + fat_offset);
-  uint32_t next = fat[cluster];
-  if (next >= 0x0ffffff8lu) {
+  uint32_t next = GetFAT()[cluster];
+  if (IsEndOfClusterchain(next)) {
     return kEndOfClusterchain;
   }
   return next;
@@ -149,6 +142,22 @@ size_t LoadFile(void *buf, size_t len, const DirectoryEntry &entry) {
   return p - buf_uint8;
 }
 
+unsigned long AllocateClusterChain(size_t n) {
+  uint32_t *fat = GetFAT();
+  unsigned long first_cluster;
+  for (first_cluster = 2;; ++first_cluster) {
+    if (fat[first_cluster] == 0) {
+      fat[first_cluster] = kEndOfClusterchain;
+      break;
+    }
+  }
+
+  if (n > 1) {
+    ExtendCluster(first_cluster, n - 1);
+  }
+  return first_cluster;
+}
+
 FileDescriptor::FileDescriptor(DirectoryEntry &fat_entry)
     : fat_entry(fat_entry) {}
 
@@ -174,6 +183,48 @@ size_t FileDescriptor::Read(void *buf, size_t len) {
   }
 
   rd_off += total;
+  return total;
+}
+
+size_t FileDescriptor::Write(const void *buf, size_t len) {
+  auto num_cluster = [](size_t bytes) {
+    return (bytes + bytes_per_cluster - 1) / bytes_per_cluster;
+  };
+
+  if (wr_cluster == 0) {
+    if (fat_entry.FirstCluster() != 0) {
+      wr_cluster = fat_entry.FirstCluster();
+    } else {
+      wr_cluster = AllocateClusterChain(num_cluster(len));
+      fat_entry.first_cluster_low = wr_cluster & 0xffff;
+      fat_entry.first_cluster_high = (wr_cluster >> 16) & 0xffff;
+    }
+  }
+
+  const uint8_t *buf8 = reinterpret_cast<const uint8_t *>(buf);
+
+  size_t total = 0;
+  while (total < len) {
+    if (wr_cluster_off == bytes_per_cluster) {
+      const auto next_cluster = NextCluster(wr_cluster);
+      if (next_cluster == kEndOfClusterchain) {
+        wr_cluster = ExtendCluster(wr_cluster, num_cluster(len - total));
+      } else {
+        wr_cluster = next_cluster;
+      }
+      wr_cluster_off = 0;
+    }
+
+    uint8_t *sec = GetSectorByCluster<uint8_t>(wr_cluster);
+    size_t n = std::min(len, bytes_per_cluster - wr_cluster_off);
+    memcpy(&sec[wr_cluster_off], &buf8[total], n);
+    total += n;
+
+    wr_cluster_off += n;
+  }
+
+  wr_off += total;
+  fat_entry.file_size = wr_off;
   return total;
 }
 
