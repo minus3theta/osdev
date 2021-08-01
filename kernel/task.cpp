@@ -241,3 +241,19 @@ __attribute__((no_caller_saved_registers)) extern "C" uint64_t
 GetCurrentTaskOSStackPointer() {
   return task_manager->CurrentTask().OSStackPointer();
 }
+
+uint64_t Task::DPagingBegin() const {
+  return dpaging_begin;
+}
+
+void Task::SetDPagingBegin(uint64_t v) {
+  dpaging_begin = v;
+}
+
+uint64_t Task::DPagingEnd() const {
+  return dpaging_end;
+}
+
+void Task::SetDPagingEnd(uint64_t v) {
+  dpaging_end = v;
+}

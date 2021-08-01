@@ -43,6 +43,10 @@ public:
   void SendMessage(const Message &msg);
   std::optional<Message> ReceiveMessage();
   std::vector<std::unique_ptr<::FileDescriptor>> &Files();
+  uint64_t DPagingBegin() const;
+  void SetDPagingBegin(uint64_t v);
+  uint64_t DPagingEnd() const;
+  void SetDPagingEnd(uint64_t v);
 
   int Level() const { return level; }
   bool Running() const { return running; }
@@ -56,6 +60,7 @@ private:
   unsigned int level{kDefaultLevel};
   bool running{false};
   std::vector<std::unique_ptr<::FileDescriptor>> files{};
+  uint64_t dpaging_begin{0}, dpaging_end{0};
 
   Task &SetLevel(int level) {
     this->level = level;

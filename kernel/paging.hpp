@@ -1,6 +1,8 @@
 #pragma once
 
 #include "asmfunc.hpp"
+#include "error.hpp"
+#include "task.hpp"
 #include <cstddef>
 #include <cstdint>
 
@@ -89,3 +91,8 @@ union PageMapEntry {
 };
 
 void ResetCR3();
+
+WithError<PageMapEntry *> NewPageMap();
+Error CleanPageMaps(LinearAddress4Level addr);
+Error SetupPageMaps(LinearAddress4Level addr, size_t num_4kpages);
+Error HandlePageFault(uint64_t error_code, uint64_t causal_addr);
