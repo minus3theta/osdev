@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <vector>
 
 #include "asmfunc.hpp"
 #include "error.hpp"
@@ -256,4 +257,16 @@ uint64_t Task::DPagingEnd() const {
 
 void Task::SetDPagingEnd(uint64_t v) {
   dpaging_end = v;
+}
+
+uint64_t Task::FileMapEnd() const {
+  return file_map_end;
+}
+
+void Task::SetFileMapEnd(uint64_t v) {
+  file_map_end = v;
+}
+
+std::vector<FileMapping> &Task::FileMaps() {
+  return file_maps;
 }

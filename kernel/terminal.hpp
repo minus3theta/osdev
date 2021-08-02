@@ -24,7 +24,7 @@ public:
   void Print(char c);
   void Print(const char *s, std::optional<size_t> len = std::nullopt);
   void ExecuteLine();
-  Error ExecuteFile(const fat::DirectoryEntry &file_entry, char *command,
+  Error ExecuteFile(fat::DirectoryEntry &file_entry, char *command,
                     char *first_arg);
 
 private:
@@ -54,6 +54,8 @@ public:
   explicit TerminalFileDescriptor(Task &task, Terminal &term);
   size_t Read(void *buf, size_t len) override;
   size_t Write(const void *buf, size_t len) override;
+  size_t Size() const override;
+  size_t Load(void *buf, size_t len, size_t offset) override;
 
 private:
   Task &task;
