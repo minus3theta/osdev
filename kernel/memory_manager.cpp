@@ -1,6 +1,7 @@
 #include "memory_manager.hpp"
 
 #include "logger.hpp"
+#include <bitset>
 
 BitmapMemoryManager::BitmapMemoryManager()
     : alloc_map(), range_begin(FrameID{0}), range_end(FrameID{kFrameCount}) {}
@@ -62,6 +63,15 @@ Error BitmapMemoryManager::Free(FrameID start_frame, size_t num_frames) {
     SetBit(FrameID{start_frame.ID() + i}, false);
   }
   return MAKE_ERROR(Error::kSuccess);
+}
+
+MemoryStat BitmapMemoryManager::Stat() const {
+  size_t sum = 0;
+  for (int i = range_begin.ID() / kBitsPerMapLine;
+       i < range_end.ID() / kBitsPerMapLine; ++i) {
+    sum += std::bitset<kBitsPerMapLine>(alloc_map[i]).count();
+  }
+  return {sum, range_end.ID() - range_begin.ID()};
 }
 
 extern "C" caddr_t program_break, program_break_end;
