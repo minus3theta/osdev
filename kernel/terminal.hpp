@@ -9,6 +9,7 @@
 #include "fat.hpp"
 #include "file.hpp"
 #include "graphics.hpp"
+#include "paging.hpp"
 #include "task.hpp"
 #include "window.hpp"
 
@@ -61,3 +62,10 @@ private:
   Task &task;
   Terminal &term;
 };
+
+struct AppLoadInfo {
+  uint64_t vaddr_end, entry;
+  PageMapEntry *pml4;
+};
+
+inline std::map<fat::DirectoryEntry *, AppLoadInfo> *app_loads;
